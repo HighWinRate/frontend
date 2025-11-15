@@ -22,22 +22,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check if user is logged in
     const token = apiClient.getToken();
     if (token) {
-      // Try to get user info from token (you might need to decode JWT or call an endpoint)
-      // For now, we'll just check if token exists
-      // In a real app, you'd decode the JWT or call /auth/me
-      setLoading(false);
-    } else {
-      setLoading(false);
+      // Try to decode JWT to get user info
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        // Set user from token payload (basic info)
+        setUser({
+          id: payload.sub,
+          email: payload.email,
+          first_name: '', // Will be updated when we fetch full user data
+          last_name: '',
+          role: payload.role,
+        });
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        // If token is invalid, clear it
+        apiClient.logout();
+      }
     }
+    setLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
     const response = await apiClient.login({ email, password });
+    if (response.access_token) {
+      apiClient.setToken(response.access_token);
+    }
     setUser(response.user);
   };
 
   const register = async (email: string, password: string, firstName: string, lastName: string) => {
     const response = await apiClient.register({ email, password, first_name: firstName, last_name: lastName });
+    if (response.access_token) {
+      apiClient.setToken(response.access_token);
+    }
     setUser(response.user);
   };
 
