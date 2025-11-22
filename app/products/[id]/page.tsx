@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { apiClient, Product } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
@@ -136,25 +137,32 @@ export default function ProductDetailPage() {
         <div className="lg:col-span-2">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">{product.title}</h1>
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <p className="text-gray-700 mb-4">{product.description}</p>
-            {product.trading_style && (
-              <p className="text-sm text-gray-600 mb-2">
-                <span className="font-semibold">سبک معاملاتی:</span> {product.trading_style}
-              </p>
-            )}
-            {product.trading_session && (
-              <p className="text-sm text-gray-600 mb-2">
-                <span className="font-semibold">جلسه معاملاتی:</span> {product.trading_session}
-              </p>
-            )}
+            <h2 className="text-lg font-semibold mb-3 text-gray-800">توضیحات محصول</h2>
+            <p className="text-gray-700 mb-6 leading-relaxed">{product.description}</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pt-4 border-t border-gray-200">
+              {product.trading_style && (
+                <div>
+                  <span className="text-sm font-semibold text-gray-600 block mb-1">سبک معاملاتی:</span>
+                  <span className="text-gray-800 font-medium">{product.trading_style}</span>
+                </div>
+              )}
+              {product.trading_session && (
+                <div>
+                  <span className="text-sm font-semibold text-gray-600 block mb-1">جلسه معاملاتی:</span>
+                  <span className="text-gray-800 font-medium">{product.trading_session}</span>
+                </div>
+              )}
+            </div>
+            
             {product.keywords && product.keywords.length > 0 && (
-              <div className="mt-4">
-                <span className="font-semibold text-sm text-gray-700">کلمات کلیدی:</span>
-                <div className="flex flex-wrap gap-2 mt-2">
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <span className="text-sm font-semibold text-gray-700 block mb-2">کلمات کلیدی:</span>
+                <div className="flex flex-wrap gap-2">
                   {product.keywords.map((keyword, idx) => (
                     <span
                       key={idx}
-                      className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded"
+                      className="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium"
                     >
                       {keyword}
                     </span>
@@ -166,17 +174,34 @@ export default function ProductDetailPage() {
 
           {product.courses && product.courses.length > 0 && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-4">دوره‌های این محصول</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">دوره‌های این محصول</h2>
+                <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                  {product.courses.length} دوره
+                </span>
+              </div>
               <div className="space-y-4">
                 {product.courses.map((course) => (
                   <Card key={course.id}>
-                    <h3 className="font-semibold mb-2">{course.title}</h3>
-                    <p className="text-gray-600 text-sm">{course.description}</p>
-                    {course.duration_minutes && (
-                      <p className="text-xs text-gray-500 mt-2">
-                        مدت زمان: {course.duration_minutes} دقیقه
-                      </p>
-                    )}
+                    <Link href={`/courses/${course.id}`}>
+                      <h3 className="font-semibold mb-2 hover:text-blue-600 cursor-pointer transition-colors">
+                        {course.title}
+                      </h3>
+                    </Link>
+                    <p className="text-gray-600 text-sm mb-3">{course.description}</p>
+                    <div className="flex gap-4 text-xs text-gray-500 mb-3">
+                      {course.duration_minutes && course.duration_minutes > 0 && (
+                        <span>⏱️ مدت زمان: {course.duration_minutes} دقیقه</span>
+                      )}
+                      {course.files && course.files.length > 0 && (
+                        <span>📁 {course.files.length} فایل</span>
+                      )}
+                    </div>
+                    <Link href={`/courses/${course.id}`}>
+                      <Button variant="outline" size="sm" className="w-full">
+                        مشاهده جزئیات دوره
+                      </Button>
+                    </Link>
                   </Card>
                 ))}
               </div>
@@ -187,15 +212,37 @@ export default function ProductDetailPage() {
         <div className="lg:col-span-1">
           <Card>
             <div className="mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-gray-600">قیمت:</span>
-                <span className="text-2xl font-bold text-blue-600">${product.price}</span>
-              </div>
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-gray-600">نرخ برد:</span>
-                <span className="text-lg font-semibold text-green-600">
-                  {product.winrate}%
-                </span>
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">اطلاعات محصول</h3>
+              
+              <div className="space-y-4 mb-4 pb-4 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 text-sm">قیمت محصول:</span>
+                  <span className="text-2xl font-bold text-blue-600">${product.price}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 text-sm">نرخ برد:</span>
+                  <span className="text-lg font-semibold text-green-600">
+                    {product.winrate}%
+                  </span>
+                </div>
+                {product.courses && product.courses.length > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 text-sm">تعداد دوره‌ها:</span>
+                    <span className="font-medium">{product.courses.length} دوره</span>
+                  </div>
+                )}
+                {product.files && product.files.length > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 text-sm">تعداد فایل‌ها:</span>
+                    <span className="font-medium">{product.files.length} فایل</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 text-sm">وضعیت:</span>
+                  <span className={`font-medium ${product.is_active ? 'text-green-600' : 'text-red-600'}`}>
+                    {product.is_active ? 'فعال' : 'غیرفعال'}
+                  </span>
+                </div>
               </div>
             </div>
 

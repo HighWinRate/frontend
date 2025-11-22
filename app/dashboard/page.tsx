@@ -88,16 +88,63 @@ export default function DashboardPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {products.map((product) => (
-                <Card key={product.id}>
-                  <h3 className="font-semibold mb-2">{product.title}</h3>
-                  <p className="text-gray-600 text-sm mb-2">{product.description}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-blue-600 font-semibold">${product.price}</span>
-                    <span className="text-green-600">نرخ برد: {product.winrate}%</span>
-                  </div>
-                </Card>
-              ))}
+              {products.map((product) => {
+                // Extract product ID - handle both direct product and UserPurchase format
+                const productId = (product as any).product?.id || product.id;
+                const actualProduct = (product as any).product || product;
+                const purchaseDate = (product as any).purchased_at;
+                return (
+                  <Card key={product.id}>
+                    <Link href={`/products/${productId}`}>
+                      <h3 className="font-semibold mb-2 hover:text-blue-600 cursor-pointer transition-colors">
+                        {product.title}
+                      </h3>
+                    </Link>
+                    <p className="text-gray-600 text-sm mb-3">{product.description}</p>
+                    
+                    <div className="space-y-2 mb-3 text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">قیمت محصول:</span>
+                        <span className="text-blue-600 font-semibold">${product.price}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">نرخ برد:</span>
+                        <span className="text-green-600 font-semibold">{product.winrate}%</span>
+                      </div>
+                      {actualProduct.courses && actualProduct.courses.length > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">تعداد دوره‌ها:</span>
+                          <span className="font-medium">{actualProduct.courses.length} دوره</span>
+                        </div>
+                      )}
+                      {actualProduct.files && actualProduct.files.length > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">تعداد فایل‌ها:</span>
+                          <span className="font-medium">{actualProduct.files.length} فایل</span>
+                        </div>
+                      )}
+                      {purchaseDate && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">تاریخ خرید:</span>
+                          <span className="font-medium text-xs">
+                            {new Date(purchaseDate).toLocaleDateString('fa-IR', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <Link href={`/products/${productId}`}>
+                      <Button variant="outline" size="sm" className="mt-3 w-full">
+                        مشاهده جزئیات کامل
+                      </Button>
+                    </Link>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
@@ -112,13 +159,42 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {courses.map((course) => (
                 <Card key={course.id}>
-                  <h3 className="font-semibold mb-2">{course.title}</h3>
-                  <p className="text-gray-600 text-sm">{course.description}</p>
-                  {course.duration_minutes && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      مدت زمان: {course.duration_minutes} دقیقه
-                    </p>
-                  )}
+                  <Link href={`/courses/${course.id}`}>
+                    <h3 className="font-semibold mb-2 hover:text-blue-600 cursor-pointer transition-colors">
+                      {course.title}
+                    </h3>
+                  </Link>
+                  <p className="text-gray-600 text-sm mb-3">{course.description}</p>
+                  
+                  <div className="space-y-2 mb-3 text-sm">
+                    {course.duration_minutes && course.duration_minutes > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">مدت زمان دوره:</span>
+                        <span className="font-medium">{course.duration_minutes} دقیقه</span>
+                      </div>
+                    )}
+                    {course.files && course.files.length > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">تعداد فایل‌ها:</span>
+                        <span className="font-medium">{course.files.length} فایل</span>
+                      </div>
+                    )}
+                    {course.keywords && course.keywords.length > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">کلمات کلیدی:</span>
+                        <span className="font-medium text-xs">
+                          {course.keywords.slice(0, 3).join(', ')}
+                          {course.keywords.length > 3 && ' ...'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <Link href={`/courses/${course.id}`}>
+                    <Button variant="outline" size="sm" className="mt-3 w-full">
+                      مشاهده جزئیات کامل
+                    </Button>
+                  </Link>
                 </Card>
               ))}
             </div>
@@ -136,16 +212,30 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {files.map((file) => (
               <Card key={file.id}>
-                <h3 className="font-semibold mb-2">{file.name}</h3>
-                <p className="text-gray-600 text-sm mb-2">
-                  نوع: {file.type} | حجم: {(file.size / 1024 / 1024).toFixed(2)} MB
-                </p>
+                <h3 className="font-semibold mb-3">{file.name}</h3>
+                <div className="space-y-2 mb-3 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">نوع فایل:</span>
+                    <span className="font-medium uppercase">{file.type}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">حجم فایل:</span>
+                    <span className="font-medium">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">وضعیت:</span>
+                    <span className={`font-medium ${file.isFree ? 'text-green-600' : 'text-blue-600'}`}>
+                      {file.isFree ? 'رایگان' : 'پولی'}
+                    </span>
+                  </div>
+                </div>
                 <Button
                   variant="outline"
                   size="sm"
+                  className="w-full"
                   onClick={() => handleDownloadFile(file.id)}
                 >
-                  دانلود
+                  دانلود فایل
                 </Button>
               </Card>
             ))}
