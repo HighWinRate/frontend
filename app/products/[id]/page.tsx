@@ -136,11 +136,41 @@ export default function ProductDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">{product.title}</h1>
+          {product.thumbnail && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <img
+                src={product.thumbnail}
+                alt={product.title}
+                className="w-full h-64 object-cover rounded-lg"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-lg font-semibold mb-3 text-gray-800">توضیحات محصول</h2>
             <p className="text-gray-700 mb-6 leading-relaxed">{product.description}</p>
             
+            {product.markdown_description && (
+              <div className="mb-6 pt-4 border-t border-gray-200">
+                <h3 className="text-md font-semibold mb-3 text-gray-800">توضیحات کامل (Markdown)</h3>
+                <div className="prose prose-sm max-w-none">
+                  <pre className="whitespace-pre-wrap text-gray-700 font-sans bg-gray-50 p-4 rounded-lg">
+                    {product.markdown_description}
+                  </pre>
+                </div>
+              </div>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pt-4 border-t border-gray-200">
+              {product.category && (
+                <div>
+                  <span className="text-sm font-semibold text-gray-600 block mb-1">دسته‌بندی:</span>
+                  <span className="text-gray-800 font-medium">{product.category.name}</span>
+                </div>
+              )}
               {product.trading_style && (
                 <div>
                   <span className="text-sm font-semibold text-gray-600 block mb-1">سبک معاملاتی:</span>
@@ -153,7 +183,24 @@ export default function ProductDetailPage() {
                   <span className="text-gray-800 font-medium">{product.trading_session}</span>
                 </div>
               )}
+              {product.backtest_trades_count && (
+                <div>
+                  <span className="text-sm font-semibold text-gray-600 block mb-1">تعداد معاملات بکتست:</span>
+                  <span className="text-gray-800 font-medium">{product.backtest_trades_count} معامله</span>
+                </div>
+              )}
             </div>
+
+            {product.backtest_results && (
+              <div className="mb-4 pt-4 border-t border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-700 block mb-2">نتایج بکتست:</h3>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <pre className="text-xs text-gray-700 font-mono overflow-x-auto">
+                    {JSON.stringify(product.backtest_results, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
             
             {product.keywords && product.keywords.length > 0 && (
               <div className="mt-4 pt-4 border-t border-gray-200">
@@ -235,6 +282,18 @@ export default function ProductDetailPage() {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600 text-sm">تعداد فایل‌ها:</span>
                     <span className="font-medium">{product.files.length} فایل</span>
+                  </div>
+                )}
+                {product.category && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 text-sm">دسته‌بندی:</span>
+                    <span className="font-medium">{product.category.name}</span>
+                  </div>
+                )}
+                {product.backtest_trades_count && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 text-sm">معاملات بکتست:</span>
+                    <span className="font-medium">{product.backtest_trades_count} معامله</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center">

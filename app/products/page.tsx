@@ -36,13 +36,43 @@ export default function ProductsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product) => (
             <Card key={product.id} className="hover:shadow-xl transition-shadow">
+              {product.thumbnail && (
+                <div className="mb-4 h-48 bg-gray-200 rounded-lg overflow-hidden">
+                  <img
+                    src={product.thumbnail}
+                    alt={product.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              {product.category && (
+                <div className="mb-2">
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    {product.category.name}
+                  </span>
+                </div>
+              )}
               <h3 className="text-xl font-semibold mb-2">{product.title}</h3>
               <p className="text-gray-600 mb-4 line-clamp-3">{product.description}</p>
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <span className="text-2xl font-bold text-blue-600">
-                    ${product.price}
-                  </span>
+                  {product.discountedPrice && product.discountedPrice < product.price ? (
+                    <div>
+                      <span className="text-lg text-gray-400 line-through mr-2">
+                        ${product.price}
+                      </span>
+                      <span className="text-2xl font-bold text-blue-600">
+                        ${product.discountedPrice}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-2xl font-bold text-blue-600">
+                      ${product.price}
+                    </span>
+                  )}
                 </div>
                 <div className="text-right">
                   <span className="text-sm text-gray-500">نرخ برد:</span>
@@ -50,6 +80,32 @@ export default function ProductsPage() {
                     {product.winrate}%
                   </span>
                 </div>
+              </div>
+              <div className="space-y-2 mb-4 text-sm">
+                {product.trading_style && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">سبک:</span>
+                    <span className="font-medium">{product.trading_style}</span>
+                  </div>
+                )}
+                {product.trading_session && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">جلسه:</span>
+                    <span className="font-medium">{product.trading_session}</span>
+                  </div>
+                )}
+                {product.backtest_trades_count && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">تعداد معاملات بکتست:</span>
+                    <span className="font-medium">{product.backtest_trades_count}</span>
+                  </div>
+                )}
+                {product.courses && product.courses.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">دوره‌ها:</span>
+                    <span className="font-medium">{product.courses.length} دوره</span>
+                  </div>
+                )}
               </div>
               {product.keywords && product.keywords.length > 0 && (
                 <div className="mb-4">
@@ -62,6 +118,11 @@ export default function ProductsPage() {
                         {keyword}
                       </span>
                     ))}
+                    {product.keywords.length > 3 && (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                        +{product.keywords.length - 3}
+                      </span>
+                    )}
                   </div>
                 </div>
               )}

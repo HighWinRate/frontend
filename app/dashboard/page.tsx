@@ -111,6 +111,30 @@ export default function DashboardPage() {
                         <span className="text-gray-600">نرخ برد:</span>
                         <span className="text-green-600 font-semibold">{product.winrate}%</span>
                       </div>
+                      {actualProduct.category && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">دسته‌بندی:</span>
+                          <span className="font-medium">{actualProduct.category.name}</span>
+                        </div>
+                      )}
+                      {actualProduct.trading_style && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">سبک معاملاتی:</span>
+                          <span className="font-medium">{actualProduct.trading_style}</span>
+                        </div>
+                      )}
+                      {actualProduct.trading_session && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">جلسه معاملاتی:</span>
+                          <span className="font-medium">{actualProduct.trading_session}</span>
+                        </div>
+                      )}
+                      {actualProduct.backtest_trades_count && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">معاملات بکتست:</span>
+                          <span className="font-medium">{actualProduct.backtest_trades_count} معامله</span>
+                        </div>
+                      )}
                       {actualProduct.courses && actualProduct.courses.length > 0 && (
                         <div className="flex justify-between items-center">
                           <span className="text-gray-600">تعداد دوره‌ها:</span>
@@ -121,6 +145,23 @@ export default function DashboardPage() {
                         <div className="flex justify-between items-center">
                           <span className="text-gray-600">تعداد فایل‌ها:</span>
                           <span className="font-medium">{actualProduct.files.length} فایل</span>
+                        </div>
+                      )}
+                      {actualProduct.keywords && actualProduct.keywords.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {actualProduct.keywords.slice(0, 3).map((keyword: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded"
+                            >
+                              {keyword}
+                            </span>
+                          ))}
+                          {actualProduct.keywords.length > 3 && (
+                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                              +{actualProduct.keywords.length - 3}
+                            </span>
+                          )}
                         </div>
                       )}
                       {purchaseDate && (
@@ -167,6 +208,12 @@ export default function DashboardPage() {
                   <p className="text-gray-600 text-sm mb-3">{course.description}</p>
                   
                   <div className="space-y-2 mb-3 text-sm">
+                    {course.category && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">دسته‌بندی:</span>
+                        <span className="font-medium">{course.category.name}</span>
+                      </div>
+                    )}
                     {course.duration_minutes && course.duration_minutes > 0 && (
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600">مدت زمان دوره:</span>
@@ -179,13 +226,31 @@ export default function DashboardPage() {
                         <span className="font-medium">{course.files.length} فایل</span>
                       </div>
                     )}
-                    {course.keywords && course.keywords.length > 0 && (
+                    {course.is_active !== undefined && (
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">کلمات کلیدی:</span>
-                        <span className="font-medium text-xs">
-                          {course.keywords.slice(0, 3).join(', ')}
-                          {course.keywords.length > 3 && ' ...'}
+                        <span className="text-gray-600">وضعیت:</span>
+                        <span className={`font-medium ${course.is_active ? 'text-green-600' : 'text-red-600'}`}>
+                          {course.is_active ? 'فعال' : 'غیرفعال'}
                         </span>
+                      </div>
+                    )}
+                    {course.keywords && course.keywords.length > 0 && (
+                      <div className="mt-2">
+                        <div className="flex flex-wrap gap-1">
+                          {course.keywords.slice(0, 3).map((keyword, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded"
+                            >
+                              {keyword}
+                            </span>
+                          ))}
+                          {course.keywords.length > 3 && (
+                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                              +{course.keywords.length - 3}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

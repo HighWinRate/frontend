@@ -82,11 +82,30 @@ export default function CourseDetailPage() {
         <div className="lg:col-span-2">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">{course.title}</h1>
           
+          {course.thumbnail && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <img
+                src={course.thumbnail}
+                alt={course.title}
+                className="w-full h-64 object-cover rounded-lg"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+          
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-lg font-semibold mb-3 text-gray-800">توضیحات دوره</h2>
             <p className="text-gray-700 mb-6 leading-relaxed">{course.description}</p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pt-4 border-t border-gray-200">
+              {course.category && (
+                <div>
+                  <span className="text-sm font-semibold text-gray-600 block mb-1">دسته‌بندی:</span>
+                  <span className="text-gray-800 font-medium">{course.category.name}</span>
+                </div>
+              )}
               {course.duration_minutes !== undefined && course.duration_minutes !== null && course.duration_minutes > 0 && (
                 <div>
                   <span className="text-sm font-semibold text-gray-600 block mb-1">مدت زمان دوره:</span>
@@ -97,6 +116,14 @@ export default function CourseDetailPage() {
                 <div>
                   <span className="text-sm font-semibold text-gray-600 block mb-1">تعداد فایل‌ها:</span>
                   <span className="text-gray-800 font-medium">{course.files.length} فایل</span>
+                </div>
+              )}
+              {course.is_active !== undefined && (
+                <div>
+                  <span className="text-sm font-semibold text-gray-600 block mb-1">وضعیت:</span>
+                  <span className={`text-gray-800 font-medium ${course.is_active ? 'text-green-600' : 'text-red-600'}`}>
+                    {course.is_active ? 'فعال' : 'غیرفعال'}
+                  </span>
                 </div>
               )}
             </div>
@@ -184,6 +211,12 @@ export default function CourseDetailPage() {
               <h3 className="text-lg font-semibold mb-4 text-gray-800">اطلاعات دوره</h3>
               
               <div className="space-y-4 mb-4 pb-4 border-b border-gray-200">
+                {course.category && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 text-sm">دسته‌بندی:</span>
+                    <span className="font-semibold">{course.category.name}</span>
+                  </div>
+                )}
                 {course.duration_minutes !== undefined && course.duration_minutes !== null && course.duration_minutes > 0 && (
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600 text-sm">مدت زمان دوره:</span>
@@ -202,6 +235,15 @@ export default function CourseDetailPage() {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600 text-sm">تعداد کلمات کلیدی:</span>
                     <span className="font-semibold">{course.keywords.length} کلمه</span>
+                  </div>
+                )}
+
+                {course.is_active !== undefined && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 text-sm">وضعیت:</span>
+                    <span className={`font-semibold ${course.is_active ? 'text-green-600' : 'text-red-600'}`}>
+                      {course.is_active ? 'فعال' : 'غیرفعال'}
+                    </span>
                   </div>
                 )}
               </div>
