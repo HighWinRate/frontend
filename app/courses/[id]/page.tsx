@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { apiClient, Course, File as FileType } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Modal } from '@/components/ui/Modal';
 
 export default function CourseDetailPage() {
   const params = useParams();
@@ -15,6 +16,11 @@ export default function CourseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<FileType | null>(null);
+  const [isFileModalOpen, setIsFileModalOpen] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     async function fetchCourse() {
@@ -57,6 +63,43 @@ export default function CourseDetailPage() {
     } catch (error: any) {
       console.error('Error downloading file:', error);
       alert(error.message || 'خطا در دانلود فایل');
+    }
+  };
+
+  const handleViewFileDetails = async (file: FileType) => {
+    setSelectedFile(file);
+    setIsFileModalOpen(true);
+
+    // Get file URL with token in query parameter for video streaming
+    const url = apiClient.getFileStreamUrl(file.id);
+
+    // If it's a video file, use the URL directly for streaming
+    // The backend will handle authentication from query parameter
+    if (file.type === 'video' && (file.isFree || hasAccess)) {
+      setVideoUrl(url);
+    }
+
+    // If it's a PDF file, use the URL directly (with token in query parameter if needed)
+    if (file.type === 'pdf' && (file.isFree || hasAccess)) {
+      setPdfUrl(url);
+    }
+  };
+
+  const handleCloseFileModal = () => {
+    setIsFileModalOpen(false);
+    setSelectedFile(null);
+    // Clean up blob URLs if they were created
+    if (videoUrl && videoUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(videoUrl);
+    }
+    if (pdfUrl && pdfUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(pdfUrl);
+    }
+    setVideoUrl(null);
+    setPdfUrl(null);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.src = '';
     }
   };
 
@@ -191,16 +234,24 @@ export default function CourseDetailPage() {
                           </div>
                         </div>
                       </div>
-                      {hasAccess && (
+                      <div className="flex gap-2 ml-4">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="ml-4"
-                          onClick={() => handleDownloadFile(file.id)}
+                          onClick={() => handleViewFileDetails(file)}
                         >
-                          دانلود
+                          جزئیات
                         </Button>
-                      )}
+                        {(file.isFree || hasAccess) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadFile(file.id)}
+                          >
+                            دانلود
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </Card>
                 ))}
@@ -295,6 +346,103 @@ export default function CourseDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* File Details Modal */}
+      <Modal
+        isOpen={isFileModalOpen}
+        onClose={handleCloseFileModal}
+        title={selectedFile?.name || 'جزئیات فایل'}
+        size={selectedFile?.type === 'video' ? 'xl' : 'lg'}
+      >
+        {selectedFile && (
+          <div className="space-y-6">
+            {/* File Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 block mb-1">نام فایل:</span>
+                <span className="text-gray-900 dark:text-gray-100">{selectedFile.name}</span>
+              </div>
+              <div>
+                <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 block mb-1">نوع فایل:</span>
+                <span className="text-gray-900 dark:text-gray-100 uppercase">{selectedFile.type}</span>
+              </div>
+              <div>
+                <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 block mb-1">حجم فایل:</span>
+                <span className="text-gray-900 dark:text-gray-100">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</span>
+              </div>
+              <div>
+                <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 block mb-1">وضعیت:</span>
+                <span className={`font-medium ${selectedFile.isFree ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                  {selectedFile.isFree ? 'رایگان' : 'پولی'}
+                </span>
+              </div>
+            </div>
+
+            {/* Video Player */}
+            {selectedFile.type === 'video' && (selectedFile.isFree || hasAccess) && (
+              <div className="w-full">
+                <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">پخش ویدیو</h3>
+                <div className="bg-black rounded-lg overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    controls
+                    className="w-full h-auto max-h-[70vh]"
+                    src={videoUrl || undefined}
+                    onError={(e) => {
+                      console.error('Video playback error:', e);
+                      alert('خطا در پخش ویدیو. لطفا فایل را دانلود کنید.');
+                    }}
+                  >
+                    مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
+                  </video>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  اگر ویدیو پخش نشد، لطفا فایل را دانلود کنید.
+                </p>
+              </div>
+            )}
+
+            {/* PDF Viewer */}
+            {selectedFile.type === 'pdf' && (selectedFile.isFree || hasAccess) && pdfUrl && (
+              <div className="w-full">
+                <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">مشاهده PDF</h3>
+                <div className="bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden" style={{ height: '600px' }}>
+                  <iframe
+                    src={`${pdfUrl}#toolbar=1`}
+                    className="w-full h-full"
+                    title={selectedFile.name}
+                    onError={() => {
+                      alert('خطا در نمایش PDF. لطفا فایل را دانلود کنید.');
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Download Button */}
+            {(selectedFile.isFree || hasAccess) && (
+              <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+                <Button
+                  onClick={() => {
+                    handleDownloadFile(selectedFile.id);
+                  }}
+                >
+                  دانلود فایل
+                </Button>
+              </div>
+            )}
+
+            {/* Access Denied Message */}
+            {!selectedFile.isFree && !hasAccess && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                <p className="text-yellow-700 dark:text-yellow-300 text-center">
+                  برای مشاهده و دانلود این فایل، باید دوره مربوطه را خریداری کنید.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

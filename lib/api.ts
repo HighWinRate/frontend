@@ -72,6 +72,7 @@ export interface File {
   size: number;
   isFree: boolean;
   path: string;
+  mimetype?: string;
   created_at: string;
 }
 
@@ -394,6 +395,19 @@ export class ApiClient {
 
   getFileUrl(fileId: string): string {
     return `${this.baseUrl}/file/serve/${fileId}`;
+  }
+
+  getFileStreamUrl(fileId: string): string {
+    // Get file URL with token if available (for authentication)
+    const url = `${this.baseUrl}/file/serve/${fileId}`;
+    const token = this.getToken();
+    
+    // For video/audio streaming, we need to add token to URL as query parameter
+    // because video/audio tags can't send custom headers
+    if (token) {
+      return `${url}?token=${encodeURIComponent(token)}`;
+    }
+    return url;
   }
 
   async downloadFile(fileId: string): Promise<void> {
