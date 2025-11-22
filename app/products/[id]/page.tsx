@@ -11,13 +11,15 @@ import { Card } from '@/components/ui/Card';
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [discountCode, setDiscountCode] = useState('');
   const [discountValidation, setDiscountValidation] = useState<any>(null);
   const [validatingDiscount, setValidatingDiscount] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
+  const [alreadyOwned, setAlreadyOwned] = useState(false);
+  const [checkingOwnership, setCheckingOwnership] = useState(false);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -32,6 +34,29 @@ export default function ProductDetailPage() {
     }
     fetchProduct();
   }, [params.id]);
+
+  useEffect(() => {
+    async function checkOwnership() {
+      if (!isAuthenticated || !user || !product) return;
+
+      setCheckingOwnership(true);
+      try {
+        const ownedProducts = await apiClient.getOwnedProducts(user.id);
+        const isOwned = ownedProducts.some(
+          (p: any) => p.product?.id === product.id || p.id === product.id
+        );
+        setAlreadyOwned(isOwned);
+      } catch (error) {
+        console.error('Error checking ownership:', error);
+      } finally {
+        setCheckingOwnership(false);
+      }
+    }
+
+    if (isAuthenticated && user && product) {
+      checkOwnership();
+    }
+  }, [isAuthenticated, user, product]);
 
   const handleValidateDiscount = async () => {
     if (!discountCode || !product) return;
@@ -222,13 +247,29 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            <Button
-              className="w-full"
-              onClick={handlePurchase}
-              isLoading={purchasing}
-            >
-              خرید با ارز دیجیتال
-            </Button>
+            {alreadyOwned ? (
+              <div className="w-full p-4 bg-green-50 border border-green-200 rounded-lg text-center">
+                <p className="text-green-700 font-semibold">
+                  ✓ شما این محصول را قبلاً خریداری کرده‌اید
+                </p>
+                <Button
+                  className="w-full mt-3"
+                  variant="outline"
+                  onClick={() => router.push('/dashboard')}
+                >
+                  مشاهده محصولات خریداری شده
+                </Button>
+              </div>
+            ) : (
+              <Button
+                className="w-full"
+                onClick={handlePurchase}
+                isLoading={purchasing || checkingOwnership}
+                disabled={checkingOwnership}
+              >
+                {checkingOwnership ? 'در حال بررسی...' : 'خرید با ارز دیجیتال'}
+              </Button>
+            )}
           </Card>
         </div>
       </div>

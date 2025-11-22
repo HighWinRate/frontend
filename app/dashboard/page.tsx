@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiClient, Course, Product, File as FileType } from '@/lib/api';
+import { apiClient, Course, Product, File as FileType, Transaction } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [files, setFiles] = useState<FileType[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
@@ -25,14 +26,16 @@ export default function DashboardPage() {
     if (user) {
       async function fetchData() {
         try {
-          const [coursesData, productsData, filesData] = await Promise.all([
+          const [coursesData, productsData, filesData, transactionsData] = await Promise.all([
             apiClient.getUserCourses(user.id),
             apiClient.getOwnedProducts(user.id),
             apiClient.getUserFiles(user.id),
+            apiClient.getMyTransactions(),
           ]);
           setCourses(coursesData);
           setProducts(productsData);
           setFiles(filesData);
+          setTransactions(transactionsData);
         } catch (error) {
           console.error('Error fetching data:', error);
         } finally {
@@ -146,6 +149,94 @@ export default function DashboardPage() {
                 </Button>
               </Card>
             ))}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-8">
+        <h2 className="text-2xl font-semibold mb-4">تراکنش‌های من</h2>
+        {transactions.length === 0 ? (
+          <Card>
+            <p className="text-gray-600">شما هنوز تراکنشی ندارید.</p>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {transactions.map((transaction) => {
+              const statusColors = {
+                pending: 'bg-yellow-100 text-yellow-800',
+                completed: 'bg-green-100 text-green-800',
+                failed: 'bg-red-100 text-red-800',
+                cancelled: 'bg-gray-100 text-gray-800',
+              };
+
+              const statusLabels = {
+                pending: 'در انتظار',
+                completed: 'تکمیل شده',
+                failed: 'ناموفق',
+                cancelled: 'لغو شده',
+              };
+
+              return (
+                <Card key={transaction.id}>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg mb-2">
+                        {transaction.product?.title || 'محصول حذف شده'}
+                      </h3>
+                      <div className="space-y-1 text-sm text-gray-600">
+                        <p>
+                          <span className="font-medium">مبلغ:</span> ${transaction.amount}
+                        </p>
+                        {transaction.discount_amount && transaction.discount_amount > 0 && (
+                          <p>
+                            <span className="font-medium">تخفیف:</span> ${transaction.discount_amount}
+                          </p>
+                        )}
+                        {(transaction.crypto_currency || transaction.cryptoCurrency) &&
+                          (transaction.crypto_amount || transaction.cryptoAmount) && (
+                            <p>
+                              <span className="font-medium">مبلغ ارز دیجیتال:</span>{' '}
+                              {transaction.crypto_amount || transaction.cryptoAmount}{' '}
+                              {transaction.crypto_currency || transaction.cryptoCurrency}
+                            </p>
+                          )}
+                        {(transaction.ref_id || transaction.refId) && (
+                          <p>
+                            <span className="font-medium">کد پیگیری:</span>{' '}
+                            {transaction.ref_id || transaction.refId}
+                          </p>
+                        )}
+                        {transaction.tx_hash && (
+                          <p>
+                            <span className="font-medium">هش تراکنش:</span>{' '}
+                            <span className="font-mono text-xs">{transaction.tx_hash}</span>
+                          </p>
+                        )}
+                        <p>
+                          <span className="font-medium">تاریخ:</span>{' '}
+                          {new Date(transaction.created_at).toLocaleDateString('fa-IR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="ml-4">
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          statusColors[transaction.status] || statusColors.pending
+                        }`}
+                      >
+                        {statusLabels[transaction.status] || transaction.status}
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>

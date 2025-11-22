@@ -55,14 +55,23 @@ export interface File {
 
 export interface Transaction {
   id: string;
-  user_id: string;
-  product_id: string;
+  user_id?: string;
+  product_id?: string;
+  product?: Product;
   amount: number;
   status: 'pending' | 'completed' | 'failed' | 'cancelled';
-  refId: string;
+  ref_id?: string;
+  refId?: string;
   cryptoAddress?: string;
+  crypto_amount?: number;
   cryptoAmount?: number;
+  crypto_currency?: string;
   cryptoCurrency?: string;
+  tx_hash?: string;
+  gateway?: string;
+  discount_amount?: number;
+  discount_code?: DiscountCode | null;
+  paid_at?: string | null;
   created_at: string;
 }
 
@@ -339,6 +348,10 @@ export class ApiClient {
 
   async getOwnedProducts(userId: string): Promise<Product[]> {
     return this.get<Product[]>(`/transaction/owned/${userId}`);
+  }
+
+  async getMyTransactions(): Promise<Transaction[]> {
+    return this.get<Transaction[]>(`/transaction/my`);
   }
 
   // Discount endpoints
