@@ -9,6 +9,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   logout: () => void;
+  updateUser: (updatedUser: User) => void;
   isAuthenticated: boolean;
 }
 
@@ -25,21 +26,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Try to decode JWT to get user info
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        // Set user from token payload (basic info)
-        setUser({
-          id: payload.sub,
-          email: payload.email,
-          first_name: '', // Will be updated when we fetch full user data
-          last_name: '',
-          role: payload.role,
-        });
+        const userId = payload.sub;
+        
+        // Fetch full user data from API
+        apiClient.getUser(userId)
+          .then((fullUser) => {
+            setUser(fullUser);
+          })
+          .catch((error) => {
+            console.error('Error fetching user data:', error);
+            // If fetch fails, use basic info from token
+            setUser({
+              id: userId,
+              email: payload.email,
+              first_name: '',
+              last_name: '',
+              role: payload.role,
+            });
+          })
+          .finally(() => {
+            setLoading(false);
+          });
       } catch (error) {
         console.error('Error decoding token:', error);
         // If token is invalid, clear it
         apiClient.logout();
+        setLoading(false);
       }
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -63,6 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -71,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        updateUser,
         isAuthenticated: !!user,
       }}
     >

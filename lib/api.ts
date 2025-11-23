@@ -481,6 +481,15 @@ export class ApiClient {
   async getUser(id: string): Promise<User> {
     return this.get<User>(`/user/${id}`);
   }
+
+  async updateUser(id: string, data: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    password?: string;
+  }): Promise<User> {
+    return this.patch<User>(`/user/${id}`, data);
+  }
 }
 
 export const apiClient = new ApiClient();
