@@ -133,7 +133,7 @@ export default function CourseDetailPage() {
           {course.thumbnail && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/50 p-6 mb-6">
               <img
-                src={course.thumbnail}
+                src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/course/${course.id}/thumbnail`}
                 alt={course.title}
                 className="w-full h-64 object-cover rounded-lg"
                 onError={(e) => {

@@ -39,7 +39,7 @@ export default function ProductsPage() {
               {product.thumbnail && (
                 <div className="mb-4 h-48 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
                   <img
-                    src={product.thumbnail}
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/product/${product.id}/thumbnail`}
                     alt={product.title}
                     className="w-full h-full object-cover"
                     onError={(e) => {

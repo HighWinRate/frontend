@@ -99,6 +99,18 @@ export default function DashboardPage() {
                 const purchaseDate = (product as any).purchased_at;
                 return (
                   <Card key={product.id}>
+                    {actualProduct.thumbnail && (
+                      <div className="mb-4 h-48 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+                        <img
+                          src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/product/${productId}/thumbnail`}
+                          alt={product.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
                     <Link href={`/products/${productId}`}>
                       <h3 className="font-semibold mb-2 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors">
                         {product.title}
@@ -204,6 +216,18 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {courses.map((course) => (
                 <Card key={course.id}>
+                  {course.thumbnail && (
+                    <div className="mb-4 h-48 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+                      <img
+                        src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/course/${course.id}/thumbnail`}
+                        alt={course.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                   <Link href={`/courses/${course.id}`}>
                     <h3 className="font-semibold mb-2 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors">
                       {course.title}
