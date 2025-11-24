@@ -3,6 +3,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { apiClient, Product, File as FileType } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
@@ -208,11 +210,32 @@ export default function ProductDetailPage() {
             
             {product.markdown_description && (
               <div className="mb-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <h3 className="text-md font-semibold mb-3 text-gray-800 dark:text-gray-200">توضیحات کامل (Markdown)</h3>
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <pre className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 font-sans bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                <h3 className="text-md font-semibold mb-3 text-gray-800 dark:text-gray-200">توضیحات کامل</h3>
+                <div className="prose prose-sm max-w-none dark:prose-invert 
+                  prose-headings:text-gray-900 dark:prose-headings:text-gray-100 prose-headings:font-bold
+                  prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-p:leading-relaxed
+                  prose-strong:text-gray-900 dark:prose-strong:text-gray-100 prose-strong:font-bold
+                  prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:no-underline prose-a:hover:underline
+                  prose-ul:text-gray-700 dark:prose-ul:text-gray-300 prose-ul:list-disc prose-ul:mr-6
+                  prose-ol:text-gray-700 dark:prose-ol:text-gray-300 prose-ol:list-decimal prose-ol:mr-6
+                  prose-li:text-gray-700 dark:prose-li:text-gray-300 prose-li:my-1
+                  prose-code:text-gray-900 dark:prose-code:text-gray-100 
+                  prose-code:bg-gray-100 dark:prose-code:bg-gray-800 
+                  prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono
+                  prose-pre:bg-gray-100 dark:prose-pre:bg-gray-900 
+                  prose-pre:text-gray-900 dark:prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:p-4
+                  prose-pre:overflow-x-auto prose-pre:border prose-pre:border-gray-200 dark:prose-pre:border-gray-700
+                  prose-blockquote:border-r-4 prose-blockquote:border-gray-300 dark:prose-blockquote:border-gray-600
+                  prose-blockquote:pr-4 prose-blockquote:italic prose-blockquote:bg-gray-50 dark:prose-blockquote:bg-gray-900/50
+                  prose-blockquote:py-2 prose-blockquote:my-4
+                  prose-hr:border-gray-300 dark:prose-hr:border-gray-600 prose-hr:my-6
+                  prose-img:rounded-lg prose-img:shadow-md prose-img:my-4
+                  prose-table:text-sm prose-th:bg-gray-100 dark:prose-th:bg-gray-800 prose-th:font-semibold
+                  prose-th:p-2 prose-td:p-2 prose-td:border-gray-200 dark:prose-td:border-gray-700
+                  prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h4:text-base">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {product.markdown_description}
-                  </pre>
+                  </ReactMarkdown>
                 </div>
               </div>
             )}
