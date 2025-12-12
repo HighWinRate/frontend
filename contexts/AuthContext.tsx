@@ -32,19 +32,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         apiClient.getUser(userId)
           .then((fullUser) => {
             setUser(fullUser);
+            setLoading(false);
           })
           .catch((error) => {
             console.error('Error fetching user data:', error);
-            // If fetch fails, use basic info from token
-            setUser({
-              id: userId,
-              email: payload.email,
-              first_name: '',
-              last_name: '',
-              role: payload.role,
-            });
-          })
-          .finally(() => {
+            // If fetch fails (e.g., 401/403), don't set user - let it redirect
+            if (error?.status === 401 || error?.status === 403) {
+              // Token might be invalid, clear it
+              apiClient.logout();
+              setUser(null);
+            } else {
+              // For other errors, use basic info from token
+              setUser({
+                id: userId,
+                email: payload.email || '',
+                first_name: '',
+                last_name: '',
+                role: payload.role || 'user',
+              });
+            }
             setLoading(false);
           });
       } catch (error) {

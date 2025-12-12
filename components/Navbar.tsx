@@ -35,6 +35,12 @@ export function Navbar() {
             {isAuthenticated ? (
               <>
                 <Link
+                  href="/tickets"
+                  className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-medium"
+                >
+                  تیکت‌ها
+                </Link>
+                <Link
                   href="/dashboard"
                   className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-medium"
                 >
@@ -101,6 +107,13 @@ export function Navbar() {
             </Link>
             {isAuthenticated ? (
               <>
+                <Link
+                  href="/tickets"
+                  className="block py-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  تیکت‌ها
+                </Link>
                 <Link
                   href="/dashboard"
                   className="block py-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"

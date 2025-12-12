@@ -121,6 +121,68 @@ export interface DiscountValidation {
   message?: string;
 }
 
+export type TicketStatus = 'open' | 'in_progress' | 'waiting_for_user' | 'resolved' | 'closed';
+export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type TicketType = 'technical' | 'billing' | 'general' | 'feature_request' | 'bug_report';
+export type MessageType = 'user' | 'support' | 'system';
+
+export interface Ticket {
+  id: string;
+  subject: string;
+  description: string;
+  status: TicketStatus;
+  priority: TicketPriority;
+  type: TicketType;
+  reference_number?: string;
+  user?: User;
+  assigned_to?: User | null;
+  messages?: TicketMessage[];
+  resolved_at?: string | null;
+  closed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TicketMessage {
+  id: string;
+  content: string;
+  type: MessageType;
+  is_internal: boolean;
+  user?: User | null;
+  ticket?: Ticket;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TicketListResponse {
+  tickets: Ticket[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface TicketStatistics {
+  total: number;
+  open: number;
+  in_progress: number;
+  waiting_for_user: number;
+  resolved: number;
+  closed: number;
+  by_priority: {
+    low: number;
+    medium: number;
+    high: number;
+    urgent: number;
+  };
+  by_type: {
+    technical: number;
+    billing: number;
+    general: number;
+    feature_request: number;
+    bug_report: number;
+  };
+}
+
 export class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
@@ -144,6 +206,13 @@ export class ApiClient {
   }
 
   getToken(): string | null {
+    // Always check localStorage to ensure sync
+    if (typeof window !== 'undefined') {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken !== this.token) {
+        this.token = storedToken;
+      }
+    }
     return this.token;
   }
 
@@ -158,8 +227,10 @@ export class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    // Always get fresh token from localStorage to ensure sync
+    const token = this.getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     const config: RequestInit = {
@@ -171,22 +242,53 @@ export class ApiClient {
       const response = await fetch(url, config);
 
       if (response.status === 401) {
-        // Unauthorized - clear token
+        // Unauthorized - clear token and redirect
         this.setToken(null);
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
         }
         throw new Error('Unauthorized');
       }
-
-      if (!response.ok) {
+      
+      if (response.status === 403) {
+        // Forbidden - might be role issue, don't clear token immediately
+        // Let the component handle it
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.message || `HTTP error! status: ${response.status}`
-        );
+        const error = new Error(errorData.message || 'Forbidden - Access denied');
+        (error as any).status = 403;
+        (error as any).data = errorData;
+        throw error;
       }
 
-      return await response.json();
+      if (!response.ok) {
+        let errorData: any = {};
+        const contentType = response.headers.get('content-type');
+        
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            errorData = await response.json();
+          } else {
+            const text = await response.text();
+            errorData = { message: text || `HTTP error! status: ${response.status}` };
+          }
+        } catch (parseError) {
+          errorData = { message: `HTTP error! status: ${response.status} ${response.statusText}` };
+        }
+        
+        const errorMessage = errorData.message || errorData.error || `HTTP error! status: ${response.status}`;
+        const error = new Error(errorMessage);
+        (error as any).status = response.status;
+        (error as any).data = errorData;
+        throw error;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await response.json();
+      } else {
+        const text = await response.text();
+        return text as T;
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -249,22 +351,53 @@ export class ApiClient {
         throw fetchError;
       }
 
+      // Handle HTTP errors (from response)
+      if (error instanceof Error && (error as any).status) {
+        const httpError = error;
+        const errorDetails: Record<string, unknown> = {
+          url,
+          baseUrl: this.baseUrl,
+          message: httpError.message,
+          status: (httpError as any).status,
+          data: (httpError as any).data,
+        };
+        console.error('API request failed - HTTP error:', errorDetails);
+        throw httpError;
+      }
+
       // Handle other errors
       const errorDetails: Record<string, unknown> = {
         url,
         baseUrl: this.baseUrl,
         message: errorMessage,
+        errorType: typeof error,
       };
 
       if (error instanceof Error) {
         errorDetails.errorName = error.name;
         errorDetails.errorMessage = error.message;
         errorDetails.errorStack = error.stack;
+        // Add any additional properties
+        if ((error as any).status) {
+          errorDetails.status = (error as any).status;
+        }
+        if ((error as any).data) {
+          errorDetails.data = (error as any).data;
+        }
       } else {
         errorDetails.error = String(error);
+        errorDetails.errorStringified = JSON.stringify(error);
       }
 
       console.error('API request failed:', errorDetails);
+      
+      // Create a proper error object if needed
+      if (!(error instanceof Error)) {
+        const newError = new Error(errorMessage);
+        (newError as any).originalError = error;
+        throw newError;
+      }
+      
       throw error;
     }
   }
@@ -494,6 +627,80 @@ export class ApiClient {
     password?: string;
   }): Promise<User> {
     return this.patch<User>(`/user/${id}`, data);
+  }
+
+  // Ticket endpoints
+  async createTicket(data: {
+    subject: string;
+    description: string;
+    priority?: TicketPriority;
+    type?: TicketType;
+  }): Promise<Ticket> {
+    return this.post<Ticket>('/tickets', data);
+  }
+
+  async getTickets(params?: {
+    page?: number;
+    limit?: number;
+    status?: TicketStatus;
+    priority?: TicketPriority;
+    type?: TicketType;
+  }): Promise<TicketListResponse> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.priority) queryParams.append('priority', params.priority);
+    if (params?.type) queryParams.append('type', params.type);
+    
+    const query = queryParams.toString();
+    return this.get<TicketListResponse>(`/tickets${query ? `?${query}` : ''}`);
+  }
+
+  async getTicket(id: string): Promise<Ticket> {
+    return this.get<Ticket>(`/tickets/${id}`);
+  }
+
+  async getTicketByReference(referenceNumber: string): Promise<Ticket> {
+    return this.get<Ticket>(`/tickets/reference/${referenceNumber}`);
+  }
+
+  async updateTicket(id: string, data: {
+    subject?: string;
+    description?: string;
+    status?: TicketStatus;
+    priority?: TicketPriority;
+    type?: TicketType;
+  }): Promise<Ticket> {
+    return this.patch<Ticket>(`/tickets/${id}`, data);
+  }
+
+  async deleteTicket(id: string): Promise<void> {
+    return this.delete<void>(`/tickets/${id}`);
+  }
+
+  async assignTicket(id: string, assignedToId: string): Promise<Ticket> {
+    return this.patch<Ticket>(`/tickets/${id}/assign`, { assignedToId });
+  }
+
+  async getTicketMessages(ticketId: string): Promise<TicketMessage[]> {
+    return this.get<TicketMessage[]>(`/tickets/${ticketId}/messages`);
+  }
+
+  async createTicketMessage(ticketId: string, data: {
+    content: string;
+    type?: MessageType;
+    is_internal?: boolean;
+  }): Promise<TicketMessage> {
+    return this.post<TicketMessage>(`/tickets/${ticketId}/messages`, data);
+  }
+
+  async deleteTicketMessage(messageId: string): Promise<void> {
+    return this.delete<void>(`/tickets/messages/${messageId}`);
+  }
+
+  async getTicketStatistics(): Promise<TicketStatistics> {
+    return this.get<TicketStatistics>('/tickets/statistics');
   }
 }
 
