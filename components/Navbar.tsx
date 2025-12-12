@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from './ui/Button';
+import { LANDING_URLS } from '@/lib/constants';
 
 export function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -13,7 +14,7 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <a
-              href="http://localhost:3003"
+              href={LANDING_URLS.home}
               className="text-xl font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
             >
               High Win Rate

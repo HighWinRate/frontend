@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
+import { LANDING_URLS } from '@/lib/constants';
 
 export default function Home() {
   useEffect(() => {
     // Redirect to Landing Page
-    window.location.href = 'http://localhost:3003';
+    window.location.href = LANDING_URLS.home;
   }, []);
 
   return (
