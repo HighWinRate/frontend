@@ -242,11 +242,10 @@ export class ApiClient {
       const response = await fetch(url, config);
 
       if (response.status === 401) {
-        // Unauthorized - clear token and redirect
+        // Unauthorized - clear token
         this.setToken(null);
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
+        // Don't redirect automatically - let the component handle it
+        // This prevents redirect loops
         throw new Error('Unauthorized');
       }
       

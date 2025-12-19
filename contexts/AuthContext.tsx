@@ -22,138 +22,94 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const supabase = createClient();
 
   useEffect(() => {
-    // Check Supabase session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        // Set token in API client
-        apiClient.setToken(session.access_token);
+    let isMounted = true;
+    
+    // Check for token in localStorage first (from backend API)
+    const token = apiClient.getToken();
+    
+    if (token) {
+      // We have a token, but don't fetch user immediately
+      // Let the first API call handle user fetching to avoid loops
+      // Just set loading to false
+      setLoading(false);
+    } else {
+      // No token, check Supabase session as fallback (only once, no retries)
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!isMounted) return;
         
-        // Fetch user profile from our API
-        apiClient.getUser(session.user.id)
-          .then((fullUser) => {
-            setUser(fullUser);
-            setLoading(false);
-          })
-          .catch((error) => {
-            console.error('Error fetching user data:', error);
-            // If fetch fails, try to use basic info from Supabase user
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              first_name: session.user.user_metadata?.first_name || '',
-              last_name: session.user.user_metadata?.last_name || '',
-              role: (session.user.user_metadata?.role as 'user' | 'admin') || 'user',
+        if (session) {
+          apiClient.setToken(session.access_token);
+          // Try to get user, but don't retry on failure to prevent loops
+          apiClient.getUser(session.user.id)
+            .then((fullUser) => {
+              if (isMounted) {
+                setUser(fullUser);
+                setLoading(false);
+              }
+            })
+            .catch(() => {
+              // Silently fail - don't retry to prevent loops
+              if (isMounted) {
+                setUser(null);
+                setLoading(false);
+              }
             });
+        } else {
+          if (isMounted) {
             setLoading(false);
-          });
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        apiClient.setToken(session.access_token);
-        // Fetch user profile
-        apiClient.getUser(session.user.id)
-          .then((fullUser) => {
-            setUser(fullUser);
-          })
-          .catch(() => {
-            // Use basic info from Supabase
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              first_name: session.user.user_metadata?.first_name || '',
-              last_name: session.user.user_metadata?.last_name || '',
-              role: (session.user.user_metadata?.role as 'user' | 'admin') || 'user',
-            });
-          });
-      } else {
-        apiClient.setToken(null);
-        setUser(null);
-      }
-    });
-
+          }
+        }
+      }).catch(() => {
+        // Silently fail to prevent loops
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
+    }
+    
     return () => {
-      subscription.unsubscribe();
+      isMounted = false;
     };
+
+    // Disable onAuthStateChange to prevent loops
+    // We'll handle auth state through backend API calls only
+    // This prevents the rapid refresh issue
   }, []);
 
   const login = async (email: string, password: string) => {
-    // Use Supabase Auth for login
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    if (data.session) {
+    // Use backend API for login (which handles Supabase Auth and user profile creation)
+    const response = await apiClient.login({ email, password });
+    
+    if (response.access_token && response.user) {
       // Set token in API client
-      apiClient.setToken(data.session.access_token);
+      apiClient.setToken(response.access_token);
       
-      // Fetch user profile from our API
-      const fullUser = await apiClient.getUser(data.user.id);
-      setUser(fullUser);
+      // Set user from backend response
+      setUser(response.user);
+    } else {
+      throw new Error('Login failed - no token or user returned');
     }
   };
 
   const register = async (email: string, password: string, firstName: string, lastName: string) => {
-    // Use Supabase Auth for registration
-    const { data, error } = await supabase.auth.signUp({
+    // Use backend API for registration (which handles Supabase Auth and user profile creation)
+    const response = await apiClient.register({
       email,
       password,
-      options: {
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          role: 'user',
-        },
-      },
+      first_name: firstName,
+      last_name: lastName,
     });
 
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    if (data.session && data.user) {
+    if (response.access_token && response.user) {
       // Set token in API client
-      apiClient.setToken(data.session.access_token);
+      apiClient.setToken(response.access_token);
       
-      const userId = data.user.id; // Store userId to avoid TypeScript null check issues
-      
-      // Fetch user profile from our API (after backend creates it)
-      // Wait a bit for backend to create the profile
-      setTimeout(async () => {
-        try {
-          const fullUser = await apiClient.getUser(userId);
-          setUser(fullUser);
-        } catch {
-          // If profile not ready yet, use basic info
-          setUser({
-            id: userId,
-            email: data.user?.email || '',
-            first_name: firstName,
-            last_name: lastName,
-            role: 'user',
-          });
-        }
-      }, 500);
-    } else if (data.user) {
-      // Email confirmation required
-      setUser({
-        id: data.user.id,
-        email: data.user.email || '',
-        first_name: firstName,
-        last_name: lastName,
-        role: 'user',
-      });
+      // Set user from backend response
+      setUser(response.user);
+    } else {
+      // Email confirmation required - backend didn't return session
+      // User will be created when they confirm email and login
+      setUser(null);
     }
   };
 

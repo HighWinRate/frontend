@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -9,28 +9,51 @@ import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, loading } = useAuth();
+  const pathname = usePathname();
+  const { login, isAuthenticated, loading, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const hasRedirected = useRef(false);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
-    if (!loading && isAuthenticated) {
-      router.push('/dashboard');
+    // Skip on initial mount - only redirect if user becomes authenticated after mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
     }
-  }, [isAuthenticated, loading, router]);
+
+    // Only redirect if user is actually authenticated (not just loading)
+    // Use a ref to prevent multiple redirects
+    if (!loading && isAuthenticated && user && !hasRedirected.current && pathname === '/login') {
+      hasRedirected.current = true;
+      router.replace('/dashboard');
+    }
+  }, [isAuthenticated, loading, user, router, pathname]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+    hasRedirected.current = false; // Reset redirect flag
 
     try {
       await login(email, password);
-      router.push('/dashboard');
+      // Wait a bit for user state to update
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Get fresh user from context after login
+      // The login function sets the user, so we should have it now
+      // Use a small delay to ensure state is updated
+      if (!hasRedirected.current) {
+        hasRedirected.current = true;
+        router.replace('/dashboard');
+      }
     } catch (err: any) {
       setError(err.message || 'خطا در ورود. لطفاً دوباره تلاش کنید.');
+      hasRedirected.current = false; // Reset on error
     } finally {
       setIsLoading(false);
     }

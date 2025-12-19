@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -9,13 +9,9 @@ import Link from 'next/link';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register, isAuthenticated, loading } = useAuth();
+  const pathname = usePathname();
+  const { register, isAuthenticated, loading, user } = useAuth();
 
-  useEffect(() => {
-    if (!loading && isAuthenticated) {
-      router.push('/dashboard');
-    }
-  }, [isAuthenticated, loading, router]);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -24,15 +20,53 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [registerSuccess, setRegisterSuccess] = useState(false);
+  const hasRedirected = useRef(false);
+  const isInitialMount = useRef(true);
+
+  useEffect(() => {
+    // Skip on initial mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Only redirect if user is actually authenticated (not just loading)
+    if (!loading && isAuthenticated && user && !hasRedirected.current && pathname === '/register') {
+      hasRedirected.current = true;
+      router.replace('/dashboard');
+    }
+  }, [isAuthenticated, loading, user, router, pathname]);
+
+  // Handle redirect after successful registration
+  useEffect(() => {
+    if (registerSuccess && user && !hasRedirected.current) {
+      // User profile was created, redirect to dashboard
+      hasRedirected.current = true;
+      router.replace('/dashboard');
+    } else if (registerSuccess && !user && !hasRedirected.current) {
+      // Email confirmation required - redirect to login after showing message
+      setError('ثبت‌نام با موفقیت انجام شد. لطفاً ایمیل خود را تایید کنید و سپس وارد شوید.');
+      // Redirect to login after a delay
+      setTimeout(() => {
+        hasRedirected.current = true;
+        router.replace('/login');
+      }, 2000);
+    }
+  }, [registerSuccess, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+    setRegisterSuccess(false);
 
     try {
       await register(formData.email, formData.password, formData.firstName, formData.lastName);
-      router.push('/dashboard');
+      // Mark registration as successful
+      setRegisterSuccess(true);
+      // Wait a bit for user state to update
+      await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (err: any) {
       setError(err.message || 'خطا در ثبت‌نام. لطفاً دوباره تلاش کنید.');
     } finally {
@@ -70,7 +104,11 @@ export default function RegisterPage() {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded">
+            <div className={`px-4 py-3 rounded ${
+              error.includes('موفقیت') 
+                ? 'bg-green-50 dark:bg-green-900/30 border border-green-400 dark:border-green-800 text-green-700 dark:text-green-300'
+                : 'bg-red-50 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300'
+            }`}>
               {error}
             </div>
           )}
