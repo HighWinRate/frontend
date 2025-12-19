@@ -47,6 +47,13 @@ export default function DashboardPage() {
           }
         } catch (error) {
           console.error('Error fetching data:', error);
+          // Set empty arrays on error to prevent infinite loading
+          if (isMounted) {
+            setCourses([]);
+            setProducts([]);
+            setFiles([]);
+            setTransactions([]);
+          }
         } finally {
           if (isMounted) {
             setLoadingData(false);
@@ -119,13 +126,20 @@ export default function DashboardPage() {
                 const productId = (product as any).product?.id || product.id;
                 const actualProduct = (product as any).product || product;
                 const purchaseDate = (product as any).purchased_at;
+                
+                // Use actualProduct for all product properties
+                const productTitle = actualProduct.title || product.title || 'بدون عنوان';
+                const productDescription = actualProduct.description || product.description || '';
+                const productPrice = actualProduct.price || product.price || 0;
+                const productWinrate = actualProduct.winrate || product.winrate || 0;
+                
                 return (
-                  <Card key={product.id} className="hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700">
+                  <Card key={productId || product.id} className="hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700">
                     {actualProduct.thumbnail && (
                       <div className="mb-4 h-48 bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden">
                         <img
                           src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/product/${productId}/thumbnail`}
-                          alt={product.title}
+                          alt={productTitle}
                           className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                           onError={(e) => {
                             (e.target as HTMLImageElement).style.display = 'none';
@@ -135,19 +149,19 @@ export default function DashboardPage() {
                     )}
                     <Link href={`/products/${productId}`}>
                       <h3 className="font-semibold mb-2 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors">
-                        {product.title}
+                        {productTitle}
                       </h3>
                     </Link>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">{product.description}</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">{productDescription}</p>
                     
                     <div className="space-y-2 mb-3 text-sm">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600 dark:text-gray-400">قیمت محصول:</span>
-                        <span className="text-blue-600 dark:text-blue-400 font-semibold">${product.price}</span>
+                        <span className="text-blue-600 dark:text-blue-400 font-semibold">${productPrice}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600 dark:text-gray-400">نرخ برد:</span>
-                        <span className="text-green-600 dark:text-green-400 font-semibold">{product.winrate}%</span>
+                        <span className="text-green-600 dark:text-green-400 font-semibold">{productWinrate}%</span>
                       </div>
                       {actualProduct.category && (
                         <div className="flex justify-between items-center">

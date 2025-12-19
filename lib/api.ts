@@ -2,7 +2,12 @@
  * API Client for connecting to Backend
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+// Get API URL from environment variable
+// In Next.js, environment variables prefixed with NEXT_PUBLIC_ are available in the browser
+const API_URL = 
+  typeof window !== 'undefined' 
+    ? (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+    : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 // Types
 export interface User {
@@ -188,7 +193,15 @@ export class ApiClient {
   private token: string | null = null;
 
   constructor(baseUrl: string = API_URL) {
-    this.baseUrl = baseUrl;
+    // Ensure baseUrl doesn't end with a slash
+    this.baseUrl = baseUrl.replace(/\/$/, '');
+    
+    // Log the base URL for debugging
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      console.log('[ApiClient] Initialized with baseUrl:', this.baseUrl);
+      console.log('[ApiClient] NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+    }
+    
     if (typeof window !== 'undefined') {
       this.token = localStorage.getItem('token');
     }
@@ -220,10 +233,13 @@ export class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
+    // Ensure endpoint starts with /
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = `${this.baseUrl}${normalizedEndpoint}`;
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache', // Prevent 304 responses
       ...(options.headers as Record<string, string>),
     };
 
@@ -235,11 +251,70 @@ export class ApiClient {
 
     const config: RequestInit = {
       headers,
+      cache: 'no-store', // Prevent browser caching
       ...options,
     };
 
     try {
-      const response = await fetch(url, config);
+      // Log request for debugging (only in development)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[API Request]', {
+          method: config.method || 'GET',
+          url,
+          baseUrl: this.baseUrl,
+          endpoint,
+          headers: Object.keys(headers),
+          config: {
+            method: config.method,
+            cache: config.cache,
+            credentials: config.credentials,
+          },
+        });
+      }
+      
+      // Test if URL is reachable before making the request
+      if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+        try {
+          // Quick connectivity test
+          const testUrl = new URL(url);
+          console.log('[API] Testing connectivity to:', testUrl.origin);
+        } catch (urlError) {
+          console.error('[API] Invalid URL:', url, urlError);
+        }
+      }
+      
+      let response: Response;
+      try {
+        response = await fetch(url, config);
+      } catch (fetchError) {
+        // Log fetch error immediately with full details
+        console.error('[API Fetch Error]', {
+          fetchError,
+          errorType: fetchError?.constructor?.name,
+          errorMessage: fetchError instanceof Error ? fetchError.message : String(fetchError),
+          errorStack: fetchError instanceof Error ? fetchError.stack : undefined,
+          url,
+          baseUrl: this.baseUrl,
+          endpoint,
+          config: {
+            method: config.method,
+            headers: Object.keys(headers),
+            cache: config.cache,
+          },
+        });
+        throw fetchError; // Re-throw to be caught by outer catch
+      }
+      
+      // Log response for debugging (only in development)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[API Response]', {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          ok: response.ok,
+          headers: Object.fromEntries(response.headers.entries()),
+        });
+      }
 
       if (response.status === 401) {
         // Unauthorized - clear token
@@ -257,6 +332,23 @@ export class ApiClient {
         (error as any).status = 403;
         (error as any).data = errorData;
         throw error;
+      }
+
+      // Handle 304 Not Modified - return cached data or empty response
+      if (response.status === 304) {
+        // For 304, the browser should use cached data
+        // But if we're here, we need to handle it gracefully
+        // Try to parse as JSON if content-type suggests it, otherwise return empty
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            return await response.json();
+          } catch {
+            // If body is empty (which is normal for 304), return empty array/object based on expected type
+            return [] as T;
+          }
+        }
+        return [] as T;
       }
 
       if (!response.ok) {
@@ -289,19 +381,43 @@ export class ApiClient {
         return text as T;
       }
     } catch (error) {
+      // Log the full error for debugging
+      console.error('[API Error] Full error details:', {
+        error,
+        errorType: error?.constructor?.name,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+        url,
+        baseUrl: this.baseUrl,
+      });
+      
       const errorMessage =
         error instanceof Error ? error.message : String(error);
+      
+      // Check for network errors (CORS, connection refused, etc.)
       const isNetworkError =
         error instanceof TypeError &&
         (errorMessage === 'Failed to fetch' ||
           errorMessage.includes('fetch') ||
-          errorMessage.includes('network'));
+          errorMessage.includes('network') ||
+          errorMessage.includes('CORS') ||
+          errorMessage.includes('ERR_CONNECTION_REFUSED') ||
+          errorMessage.includes('ERR_NETWORK') ||
+          errorMessage.includes('NetworkError') ||
+          errorMessage.includes('Network request failed'));
 
       // Handle network/fetch errors specifically
       if (isNetworkError) {
-        const networkError = new Error(
-          `Unable to connect to the API server at ${url}. Please ensure the backend server is running at ${this.baseUrl}`
-        );
+        // More detailed error message
+        let detailedMessage = `Unable to connect to the API server at ${url}. `;
+        detailedMessage += `Please ensure the backend server is running at ${this.baseUrl}. `;
+        
+        // Add CORS hint if it's a CORS-related error
+        if (errorMessage.includes('CORS') || errorMessage.includes('Access-Control')) {
+          detailedMessage += `This might be a CORS issue. Check that FRONTEND_URL in backend/.env includes ${typeof window !== 'undefined' ? window.location.origin : 'your frontend URL'}.`;
+        }
+        
+        const networkError = new Error(detailedMessage);
         networkError.name = 'NetworkError';
         // Preserve original error as cause if available
         if (error instanceof Error) {
