@@ -19,16 +19,28 @@ export default function LoginPage() {
   const isInitialMount = useRef(true);
 
   useEffect(() => {
+    // Wait for auth to finish loading
+    if (loading) {
+      return;
+    }
+
     // Skip on initial mount - only redirect if user becomes authenticated after mount
     if (isInitialMount.current) {
       isInitialMount.current = false;
+      // But still check if user is already authenticated on mount
+      if (isAuthenticated && user && pathname === '/login') {
+        hasRedirected.current = true;
+        router.replace('/dashboard');
+        setIsLoading(false);
+      }
       return;
     }
 
     // Only redirect if user is actually authenticated (not just loading)
     // Use a ref to prevent multiple redirects
-    if (!loading && isAuthenticated && user && !hasRedirected.current && pathname === '/login') {
+    if (isAuthenticated && user && !hasRedirected.current && pathname === '/login') {
       hasRedirected.current = true;
+      setIsLoading(false); // Stop loading before redirect
       router.replace('/dashboard');
     }
   }, [isAuthenticated, loading, user, router, pathname]);
@@ -41,20 +53,14 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      // Wait a bit for user state to update
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Get fresh user from context after login
-      // The login function sets the user, so we should have it now
-      // Use a small delay to ensure state is updated
-      if (!hasRedirected.current) {
-        hasRedirected.current = true;
-        router.replace('/dashboard');
-      }
+      // The login function sets the user in AuthContext
+      // The useEffect will handle the redirect once user state is updated
+      // We don't need to manually redirect here
+      // Don't set loading to false here - let the redirect happen first
+      // If redirect doesn't happen, useEffect will handle it
     } catch (err: any) {
       setError(err.message || 'خطا در ورود. لطفاً دوباره تلاش کنید.');
       hasRedirected.current = false; // Reset on error
-    } finally {
       setIsLoading(false);
     }
   };

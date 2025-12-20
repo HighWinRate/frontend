@@ -19,13 +19,19 @@ export default function DashboardPage() {
   const hasFetchedRef = useRef<string | null>(null); // Track which user ID we've fetched for
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    // Wait for auth to finish loading
+    if (loading) {
+      return;
+    }
+
+    // If not authenticated after loading is done, redirect to login
+    if (!isAuthenticated || !user) {
       router.push('/login');
       return;
     }
 
     // Only fetch if we have a user ID and haven't fetched for this user yet
-    if (user?.id && !loading && hasFetchedRef.current !== user.id) {
+    if (user?.id && hasFetchedRef.current !== user.id) {
       const userId = user.id;
       hasFetchedRef.current = userId; // Mark as fetched
       let isMounted = true;
@@ -40,13 +46,16 @@ export default function DashboardPage() {
           ]);
           
           if (isMounted) {
-            setCourses(coursesData);
-            setProducts(productsData);
-            setFiles(filesData);
-            setTransactions(transactionsData);
+            // Filter out any null/undefined values from products (in case backend returns null for missing products)
+            const validProducts = (productsData || []).filter((p: any) => p !== null && p !== undefined);
+            
+            setCourses(coursesData || []);
+            setProducts(validProducts);
+            setFiles(filesData || []);
+            setTransactions(transactionsData || []);
           }
         } catch (error) {
-          console.error('Error fetching data:', error);
+          console.error('[Dashboard] Error fetching data:', error);
           // Set empty arrays on error to prevent infinite loading
           if (isMounted) {
             setCourses([]);
@@ -71,7 +80,7 @@ export default function DashboardPage() {
       hasFetchedRef.current = null; // Reset when user logs out
       setLoadingData(false);
     }
-  }, [user?.id, isAuthenticated, loading]); // Only depend on user.id, not the whole user object
+  }, [user?.id, isAuthenticated, loading, router]); // Include router in dependencies
 
   if (loading || loadingData) {
     return (
@@ -121,11 +130,22 @@ export default function DashboardPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {products.map((product) => {
+              {products
+                .filter((product: any) => {
+                  // Filter out any products that don't have a valid product object or ID
+                  const productId = product?.product?.id || product?.id;
+                  return productId && (product.product || product);
+                })
+                .map((product) => {
                 // Extract product ID - handle both direct product and UserPurchase format
                 const productId = (product as any).product?.id || product.id;
                 const actualProduct = (product as any).product || product;
                 const purchaseDate = (product as any).purchased_at;
+                
+                // Validate that we have the necessary product data
+                if (!actualProduct || !productId) {
+                  return null;
+                }
                 
                 // Use actualProduct for all product properties
                 const productTitle = actualProduct.title || product.title || 'بدون عنوان';
@@ -237,7 +257,8 @@ export default function DashboardPage() {
                     </Link>
                   </Card>
                 );
-              })}
+              })
+              .filter((item) => item !== null)}
             </div>
           )}
         </div>

@@ -135,8 +135,8 @@ export default function TicketsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-8 flex justify-between items-center">
-        <div>
+      <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex-1 min-w-0">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             تیکت‌های پشتیبانی
           </h1>
@@ -144,11 +144,20 @@ export default function TicketsPage() {
             مدیریت و پیگیری تیکت‌های پشتیبانی
           </p>
         </div>
-        <Link href="/tickets/new">
-          <Button className="bg-primary-600 hover:bg-primary-700 text-white">
-            تیکت جدید
-          </Button>
-        </Link>
+        <div className="flex-shrink-0 w-full sm:w-auto">
+          <Link 
+            href="/tickets/new" 
+            className="inline-block w-full sm:w-auto"
+          >
+            <button
+              type="button"
+              className="w-full sm:w-auto min-w-[160px] px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2"
+            >
+              <span className="text-xl">+</span>
+              <span>تیکت جدید</span>
+            </button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -207,13 +216,33 @@ export default function TicketsPage() {
         </div>
       </div>
 
+      {/* Floating Action Button for Mobile */}
+      <Link 
+        href="/tickets/new" 
+        className="fixed bottom-6 right-6 sm:hidden z-50"
+      >
+        <button
+          className="bg-primary-600 hover:bg-primary-700 text-white rounded-full w-16 h-16 shadow-2xl flex items-center justify-center p-0 transition-all duration-200 hover:scale-110 active:scale-95"
+          title="ایجاد تیکت جدید"
+          aria-label="ایجاد تیکت جدید"
+        >
+          <span className="text-3xl font-bold">+</span>
+        </button>
+      </Link>
+
       {/* Tickets List */}
       {tickets.length === 0 ? (
         <Card>
           <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 mb-4">هیچ تیکتی یافت نشد</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-6 text-lg">هیچ تیکتی یافت نشد</p>
             <Link href="/tickets/new">
-              <Button variant="primary">ایجاد تیکت جدید</Button>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 min-w-[180px]"
+              >
+                <span className="text-xl font-bold">+</span>
+                <span>ایجاد تیکت جدید</span>
+              </button>
             </Link>
           </div>
         </Card>
