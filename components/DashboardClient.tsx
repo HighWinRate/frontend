@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { getPublicStorageUrl } from '@/lib/storage';
 import {
   TransactionWithRelations,
   UserPurchaseWithProduct,
@@ -19,6 +20,9 @@ interface DashboardClientProps {
   courses: Course[];
   files: FileType[];
 }
+
+const resolveThumbnail = (thumbnail?: string | null) =>
+  getPublicStorageUrl('thumbnails', thumbnail);
 
 export default function DashboardClient({
   user,
@@ -96,12 +100,13 @@ export default function DashboardClient({
               {purchases.map((purchase) => {
                 const product = purchase.product;
                 if (!product) return null;
+                const thumbnailUrl = resolveThumbnail(product.thumbnail);
                 return (
                   <Card key={purchase.id} className="border border-gray-200 dark:border-gray-700">
-                    {product.thumbnail && (
+                    {thumbnailUrl && (
                       <div className="mb-4 h-48 bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden">
                         <img
-                          src={product.thumbnail}
+                          src={thumbnailUrl}
                           alt={product.title}
                           className="w-full h-full object-cover"
                           onError={(event) => {

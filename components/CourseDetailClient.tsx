@@ -8,6 +8,7 @@ import { Course, File as FileType } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { userHasCourseAccess } from '@/lib/data/courses';
+import { getPublicStorageUrl } from '@/lib/storage';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
@@ -27,6 +28,9 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const resolveThumbnail = (path?: string | null) =>
+    getPublicStorageUrl('thumbnails', path);
+  const courseThumbnailUrl = resolveThumbnail(course.thumbnail);
 
   useEffect(() => {
     let isMounted = true;
@@ -119,6 +123,19 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
           <h1 className="text-4xl font-bold dark:text-white mb-2">{course.title}</h1>
           <p className="text-lg text-gray-600 dark:text-gray-300">{course.description}</p>
         </header>
+
+        {courseThumbnailUrl && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/50 p-6 mb-6">
+            <img
+              src={courseThumbnailUrl}
+              alt={course.title}
+              className="w-full h-64 object-cover rounded-lg"
+              onError={(event) => {
+                (event.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+        )}
 
         {course.markdown_description && (
           <div className="prose prose-sm max-w-none dark:prose-invert">

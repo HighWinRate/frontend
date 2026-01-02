@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiClient, TicketPriority, TicketType } from '@/lib/api';
+import { TicketPriority, TicketType } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -34,13 +34,27 @@ export default function NewTicketPage() {
 
     setSubmitting(true);
     try {
-      const ticket = await apiClient.createTicket({
-        subject: subject.trim(),
-        description: description.trim(),
-        priority,
-        type,
+      const response = await fetch('/api/tickets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          subject: subject.trim(),
+          description: description.trim(),
+          priority,
+          type,
+        }),
       });
-      router.push(`/tickets/${ticket.id}`);
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.message || 'خطا در ایجاد تیکت');
+      }
+
+      const data = await response.json();
+      const ticketId = data.ticketId || data.id;
+      router.push(ticketId ? `/tickets/${ticketId}` : '/tickets');
     } catch (err: any) {
       setError(err.message || 'خطا در ایجاد تیکت');
     } finally {
@@ -69,7 +83,9 @@ export default function NewTicketPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              موضوع <span className="text-red-500">*</span>
+              موضوع <span className="text-red-500">
+                *
+              </span>
             </label>
             <Input
               type="text"
@@ -83,7 +99,9 @@ export default function NewTicketPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              توضیحات <span className="text-red-500">*</span>
+              توضیحات <span className="text-red-500">
+                *
+              </span>
             </label>
             <textarea
               value={description}
@@ -161,4 +179,3 @@ export default function NewTicketPage() {
     </div>
   );
 }
-

@@ -1,3 +1,5 @@
+'use server';
+
 import { redirect } from 'next/navigation';
 import DashboardClient from '@/components/DashboardClient';
 import { createServerSupabaseClient } from '@/lib/supabase/server';

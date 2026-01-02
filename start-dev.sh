@@ -47,10 +47,15 @@ if [ ! -f ".env" ]; then
     else
         print_warning ".env.example file not found. Creating .env with default values..."
         cat > .env << 'ENVEOF'
-# API URL
-NEXT_PUBLIC_API_URL=http://localhost:3000
+# Supabase (public)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
-# Next.js Configuration
+# Supabase (server-only)
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Optional overrides
+NEXT_PUBLIC_LANDING_URL=http://localhost:3003
 NEXT_PUBLIC_APP_NAME=High Win Rate
 ENVEOF
         print_success ".env file created with default values."

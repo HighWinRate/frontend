@@ -11,6 +11,7 @@
 ```
 
 این اسکریپت به صورت خودکار:
+
 - بررسی وجود Node.js و npm
 - ایجاد فایل `.env` از `.env.example` (در صورت نیاز)
 - نصب dependencies
@@ -19,17 +20,20 @@
 ### روش دستی
 
 1. **نصب dependencies**
+
 ```bash
 npm install
 ```
 
 2. **تنظیم متغیرهای محیطی**
+
 ```bash
 cp .env.example .env
 # ویرایش فایل .env در صورت نیاز
 ```
 
 3. **راه‌اندازی سرور توسعه**
+
 ```bash
 npm run dev
 ```
@@ -88,36 +92,24 @@ frontend/
 
 ### متغیرهای محیطی
 
-فایل `.env`:
+فایل `.env.local` را با دیتاهای پروژه Supabase پر کنید:
 
 ```env
-# API URL
-NEXT_PUBLIC_API_URL=http://localhost:3000
-
-# Landing Page URL (برای لینک "High Win Rate" در Navbar)
-NEXT_PUBLIC_LANDING_URL=http://localhost:3003
-
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-
-# Next.js Configuration
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_LANDING_URL=http://localhost:3003
 NEXT_PUBLIC_APP_NAME=High Win Rate
 ```
 
-**⚠️ برای Production (Vercel/Deployment):**
-در Vercel یا platform deploy، این environment variables را تنظیم کنید:
+**🔒 به‌خاطر امنیت**: هرگز `SUPABASE_SERVICE_ROLE_KEY` را سمت کلاینت انتشار ندهید؛ این مقدار باید فقط در محیط سرور (Next.js API routes/Server Actions) وجود داشته باشد.
 
-```env
-NEXT_PUBLIC_API_URL=https://api.highwinrate.com
-NEXT_PUBLIC_LANDING_URL=https://highwinrate.com
-NEXT_PUBLIC_SUPABASE_URL=your-project-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-```
+**⚠️ برای Production (Vercel/Deployment):**
+مقادیر بالا را با پروژه‌ی Supabase واقعی و نام دامنه‌ی تولید جایگزین کنید.
 
 ### پورت پیش‌فرض
 
-فرانت‌اند روی پورت **3001** اجرا می‌شود (بک‌اند روی پورت 3000).
+فرانت‌اند روی پورت **3001** اجرا می‌شود.
 
 ## 📝 اسکریپت‌ها
 
@@ -126,30 +118,27 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 - `npm run start` - اجرای نسخه production
 - `npm run lint` - بررسی کد با ESLint
 
-## 🔗 اتصال به Backend
-
-فرانت‌اند به صورت پیش‌فرض به بک‌اند در `http://localhost:3000` متصل می‌شود.
-
-**مهم**: قبل از راه‌اندازی فرانت‌اند، مطمئن شوید که بک‌اند در حال اجرا است.
-
 ## 🐛 عیب‌یابی
 
-### مشکل: خطای اتصال به API
+### مشکل: خطای اتصال به Supabase
 
 **راه‌حل**:
-1. بررسی کنید که بک‌اند در حال اجرا است
-2. بررسی کنید که `NEXT_PUBLIC_API_URL` در `.env` درست تنظیم شده است
-3. بررسی کنید که CORS در بک‌اند فعال است
+
+1. مطمئن شوید `NEXT_PUBLIC_SUPABASE_URL` و `NEXT_PUBLIC_SUPABASE_ANON_KEY` در `.env` درست هستند
+2. اگر در حال استفاده از API route یا Server Action هستید، `SUPABASE_SERVICE_ROLE_KEY` تنظیم شده باشد
+3. وضعیت سرویس Supabase و شبکه‌ی شما کنترل شود
 
 ### مشکل: خطای 401 Unauthorized
 
 **راه‌حل**:
+
 1. بررسی کنید که توکن JWT در localStorage ذخیره شده است
 2. دوباره وارد شوید
 
 ### مشکل: خطای TypeScript
 
 **راه‌حل**:
+
 ```bash
 npm install
 npm run build
