@@ -43,16 +43,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     first_name: (sessionUser.user_metadata as any)?.first_name ?? '',
     last_name: (sessionUser.user_metadata as any)?.last_name ?? '',
     role: ((sessionUser.user_metadata as any)?.role as User['role']) ?? 'user',
-    avatar: undefined,
-    bio: undefined,
-    phone: undefined,
-    is_active: true,
-    last_login: undefined,
-    is_verified: sessionUser.email_confirmed_at ? true : false,
-    verification_token: undefined,
-    verification_token_expires: undefined,
-    created_at: sessionUser.created_at,
-    updated_at: undefined,
   }), []);
 
   const fetchProfile = useCallback(
