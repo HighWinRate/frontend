@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Ticket, TicketStatus } from '@/lib/api';
+import { ImageUpload, UploadedImage } from '@/components/ImageUpload';
 
 interface TicketDetailClientProps {
   ticket: Ticket;
@@ -31,6 +32,7 @@ const statusLabels: Record<TicketStatus, string> = {
 export default function TicketDetailClient({ ticket, currentUserId }: TicketDetailClientProps) {
   const router = useRouter();
   const [newMessage, setNewMessage] = useState('');
+  const [messageImages, setMessageImages] = useState<UploadedImage[]>([]);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [messageError, setMessageError] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -51,6 +53,7 @@ export default function TicketDetailClient({ ticket, currentUserId }: TicketDeta
         body: JSON.stringify({
           content: newMessage.trim(),
           type: 'user',
+          attachments: messageImages,
         }),
       });
 
@@ -60,6 +63,7 @@ export default function TicketDetailClient({ ticket, currentUserId }: TicketDeta
       }
 
       setNewMessage('');
+      setMessageImages([]);
       router.refresh();
     } catch (err: any) {
       setMessageError(err.message || 'خطا در ارسال پیام');
@@ -158,6 +162,30 @@ export default function TicketDetailClient({ ticket, currentUserId }: TicketDeta
                         </span>
                       </div>
                       <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{message.content}</p>
+                      {message.attachments && message.attachments.length > 0 && (
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          {message.attachments.map((attachment: any, idx: number) => (
+                            <a
+                              key={idx}
+                              href={attachment.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="relative group border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:border-blue-500 transition-colors"
+                            >
+                              <img
+                                src={attachment.url}
+                                alt={attachment.name}
+                                className="w-full h-32 object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                <span className="opacity-0 group-hover:opacity-100 text-white text-xs bg-black/50 px-2 py-1 rounded">
+                                  مشاهده
+                                </span>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -176,6 +204,11 @@ export default function TicketDetailClient({ ticket, currentUserId }: TicketDeta
                   rows={4}
                   required
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                />
+                <ImageUpload 
+                  onImagesChange={setMessageImages}
+                  maxImages={5}
+                  disabled={sendingMessage}
                 />
                 {messageError && (
                   <p className="text-sm text-red-600 dark:text-red-400">{messageError}</p>

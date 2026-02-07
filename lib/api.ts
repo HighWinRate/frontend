@@ -140,6 +140,16 @@ export interface Ticket {
   updated_at: string;
 }
 
+export interface ImageAttachment {
+  url: string;
+  path: string;
+  name: string;
+  size: number;
+  mimeType: string;
+  width?: number;
+  height?: number;
+}
+
 export interface TicketMessage {
   id: string;
   content: string;
@@ -147,6 +157,7 @@ export interface TicketMessage {
   is_internal: boolean;
   user?: User | null;
   ticket?: Ticket;
+  attachments?: ImageAttachment[];
   created_at: string;
   updated_at: string;
 }

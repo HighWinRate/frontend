@@ -31,6 +31,7 @@ export async function POST(request: Request) {
   const description = String(payload?.description || '').trim();
   const priority = (payload?.priority || 'medium') as TicketPriority;
   const type = (payload?.type || 'general') as TicketType;
+  const attachments = payload?.attachments || [];
 
   if (!subject || !description) {
     return NextResponse.json(
@@ -83,6 +84,7 @@ export async function POST(request: Request) {
       content: description,
       type: 'user',
       user_id: session.user.id,
+      attachments: attachments,
     });
 
   if (messageError) {

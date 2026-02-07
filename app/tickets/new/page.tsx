@@ -7,6 +7,7 @@ import { TicketPriority, TicketType } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { ImageUpload, UploadedImage } from '@/components/ImageUpload';
 
 export default function NewTicketPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function NewTicketPage() {
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TicketPriority>('medium');
   const [type, setType] = useState<TicketType>('general');
+  const [images, setImages] = useState<UploadedImage[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -44,6 +46,7 @@ export default function NewTicketPage() {
           description: description.trim(),
           priority,
           type,
+          attachments: images,
         }),
       });
 
@@ -147,6 +150,12 @@ export default function NewTicketPage() {
               </select>
             </div>
           </div>
+
+          <ImageUpload 
+            onImagesChange={setImages}
+            maxImages={5}
+            disabled={submitting}
+          />
 
           <div className="flex flex-col sm:flex-row gap-4">
             <button

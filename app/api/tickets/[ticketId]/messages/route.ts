@@ -12,7 +12,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ tic
     return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
   }
 
-  const { content } = await request.json().catch(() => ({}));
+  const payload = await request.json().catch(() => ({}));
+  const content = payload?.content;
+  const attachments = payload?.attachments || [];
+  
   if (!content || typeof content !== 'string') {
     return NextResponse.json(
       { message: 'content is required' },
@@ -25,6 +28,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tic
     content: content.trim(),
     type: 'user',
     user_id: session.user.id,
+    attachments: attachments,
   });
 
   if (error) {
