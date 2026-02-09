@@ -106,7 +106,6 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: product.id,
-          cryptoCurrency: 'BTC',
           discountCode:
             discountValidation && discountValidation.isValid
               ? discountCode.trim()
@@ -114,21 +113,12 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         }),
       });
 
+      const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
         throw new Error(payload.message || 'خطای ثبت تراکنش');
       }
 
-      const payload = await response.json();
-      alert(
-        `پرداخت آغاز شد!\n\n` +
-          `آدرس کیف پول: ${payload.cryptoAddress}\n` +
-          `مبلغ: ${payload.cryptoAmount} ${payload.cryptoCurrency}\n` +
-          `قیمت اصلی: ${payload.originalPrice}\n` +
-          (payload.discountAmount ? `تخفیف: ${payload.discountAmount}\n` : '') +
-          `قیمت نهایی: ${payload.finalPrice}\n\n` +
-          'لطفاً پرداخت را انجام دهید.',
-      );
+      router.push(`/transactions/${payload.transactionId}`);
     } catch (error: any) {
       alert(error.message || 'خطا در آغاز پرداخت');
     } finally {
@@ -355,7 +345,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                 isLoading={purchasing || checkingOwnership}
                 disabled={checkingOwnership}
               >
-                {checkingOwnership ? 'در حال بررسی...' : 'خرید با ارز دیجیتال'}
+                {checkingOwnership ? 'در حال بررسی...' : purchasing ? 'در حال ثبت...' : 'خرید (پرداخت کارت به کارت)'}
               </Button>
             )}
           </Card>

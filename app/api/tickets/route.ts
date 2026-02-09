@@ -32,6 +32,8 @@ export async function POST(request: Request) {
   const priority = (payload?.priority || 'medium') as TicketPriority;
   const type = (payload?.type || 'general') as TicketType;
   const attachments = payload?.attachments || [];
+  let relatedTransactionId: string | null = payload?.relatedTransactionId ?? payload?.related_transaction_id ?? null;
+  if (relatedTransactionId === '') relatedTransactionId = null;
 
   if (!subject || !description) {
     return NextResponse.json(
@@ -54,19 +56,32 @@ export async function POST(request: Request) {
     );
   }
 
+  if (relatedTransactionId) {
+    const { data: tx } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('id', relatedTransactionId)
+      .eq('user_id', session.user.id)
+      .single();
+    if (!tx) relatedTransactionId = null;
+  }
+
   const referenceNumber = generateReferenceNumber();
+
+  const insertPayload: Record<string, unknown> = {
+    subject,
+    description,
+    priority,
+    type,
+    user_id: session.user.id,
+    status: 'open',
+    reference_number: referenceNumber,
+  };
+  if (relatedTransactionId) insertPayload.related_transaction_id = relatedTransactionId;
 
   const { data: ticket, error: ticketError } = await supabase
     .from('tickets')
-    .insert({
-      subject,
-      description,
-      priority,
-      type,
-      user_id: session.user.id,
-      status: 'open',
-      reference_number: referenceNumber,
-    })
+    .insert(insertPayload)
     .select('id, reference_number')
     .single();
 

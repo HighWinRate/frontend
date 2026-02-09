@@ -147,10 +147,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(error.message);
       }
 
-      // Don't manually set loading or fetch profile here
-      // Let onAuthStateChange handle it automatically
+      // به‌روزرسانی فوری state تا ریدایرکت بدون رفرش انجام شود
+      if (data.session?.user) {
+        await fetchProfile(data.session.user.id, data.session.user);
+      }
     },
-    [supabase],
+    [supabase, fetchProfile],
   );
 
   const register = useCallback(

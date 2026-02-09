@@ -41,6 +41,12 @@ export function Navbar() {
                   تیکت‌ها
                 </Link>
                 <Link
+                  href="/transactions"
+                  className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-medium"
+                >
+                  تراکنش‌ها
+                </Link>
+                <Link
                   href="/dashboard"
                   className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-medium"
                 >
@@ -113,6 +119,13 @@ export function Navbar() {
                   onClick={() => setIsOpen(false)}
                 >
                   تیکت‌ها
+                </Link>
+                <Link
+                  href="/transactions"
+                  className="block py-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  تراکنش‌ها
                 </Link>
                 <Link
                   href="/dashboard"

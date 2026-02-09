@@ -40,7 +40,8 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      // useEffect will handle the redirect automatically
+      hasRedirected.current = true;
+      router.replace('/dashboard');
     } catch (err: any) {
       setError(err.message || 'خطا در ورود. لطفاً دوباره تلاش کنید.');
       setIsLoading(false);
