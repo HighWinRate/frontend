@@ -24,7 +24,7 @@ print_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
-print_info "Starting frontend setup..."
+print_info "Starting web-app setup..."
 
 # Check for Node.js
 if ! command -v node &> /dev/null; then
@@ -88,7 +88,7 @@ fi
 print_info "Starting Next.js server..."
 print_success "Server is starting..."
 print_info "Press Ctrl+C to stop."
-print_info "Frontend will be available at http://localhost:3001"
+print_info "Web App will be available at http://localhost:3001"
 echo ""
 
 npm run dev

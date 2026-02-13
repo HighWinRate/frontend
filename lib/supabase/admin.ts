@@ -17,7 +17,7 @@ export function createAdminClient() {
     },
     global: {
       headers: {
-        'x-application-name': 'high-win-rate-frontend',
+        'x-application-name': 'high-win-rate-web-app',
       },
     },
   });
