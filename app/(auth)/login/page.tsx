@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
+import { getErrorMessage } from '@/lib/utils/error';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -45,8 +46,8 @@ export default function LoginPage() {
         // everything ok
         router.replace('/dashboard');
       }
-    } catch (err: any) {
-      setError(err?.message || 'خطا در ورود. دوباره تلاش کنید.');
+    } catch (err) {
+      setError(getErrorMessage(err) || 'خطا در ورود. دوباره تلاش کنید.');
     } finally {
       setIsLoading(false);
     }

@@ -7,6 +7,7 @@ import { LANDING_URLS } from '@/lib/constants';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
+import { getErrorMessage } from '@/lib/utils/error';
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,8 +17,8 @@ export function Navbar() {
     try {
       await supabase.auth.signOut();
       router.push('/login');
-    } catch (err: any) {
-      alert(err?.message);
+    } catch (err) {
+      alert(getErrorMessage(err));
     }
   };
 

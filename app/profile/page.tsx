@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useAuth } from '@/providers/AuthProvider';
 import Loading from '@/app/loading';
+import { getErrorMessage } from '@/lib/utils/error';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -138,10 +139,10 @@ export default function ProfilePage() {
       setTimeout(() => {
         setSuccessMessage('');
       }, 3000);
-    } catch (error: any) {
-      console.error('Error updating profile:', error);
+    } catch (err) {
+      console.error('Error updating profile:', err);
       setErrors({
-        submit: error?.message || 'خطا در به‌روزرسانی مشخصات',
+        submit: getErrorMessage(err) || 'خطا در به‌روزرسانی مشخصات',
       });
     } finally {
       setIsSubmitting(false);

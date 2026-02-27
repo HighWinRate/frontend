@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
+import { getErrorMessage } from '@/lib/utils/error';
 
 interface ProductDetailClientProps {
   product: Product;
@@ -77,12 +78,12 @@ export default function ProductDetailClient({
 
       const data: DiscountValidation = await response.json();
       setDiscountValidation(data);
-    } catch (error: any) {
+    } catch (error) {
       setDiscountValidation({
         isValid: false,
         discountAmount: 0,
         finalPrice: product.price,
-        message: error.message || 'کد تخفیف نامعتبر است',
+        message: getErrorMessage(error) || 'کد تخفیف نامعتبر است',
       });
     } finally {
       setValidatingDiscount(false);
@@ -115,8 +116,8 @@ export default function ProductDetailClient({
       }
 
       router.push(`/transactions/${payload.transactionId}`);
-    } catch (error: any) {
-      alert(error.message || 'خطا در آغاز پرداخت');
+    } catch (err) {
+      alert(getErrorMessage(err) || 'خطا در آغاز پرداخت');
     } finally {
       setPurchasing(false);
     }
@@ -139,8 +140,8 @@ export default function ProductDetailClient({
       link.click();
       link.remove();
       URL.revokeObjectURL(downloadUrl);
-    } catch (error: any) {
-      alert(error.message || 'خطا در دانلود فایل');
+    } catch (err) {
+      alert(getErrorMessage(err) || 'خطا در دانلود فایل');
     }
   }, []);
 

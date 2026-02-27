@@ -6,9 +6,9 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { getErrorMessage } from '@/lib/utils/error';
 
 export default function RegisterPage() {
-  const router = useRouter();
   const supabase = createClient();
 
   const [formData, setFormData] = useState({
@@ -42,8 +42,10 @@ export default function RegisterPage() {
 
       setRegisterSuccess(true);
       setIsLoading(false);
-    } catch (err: any) {
-      setError(err?.message || 'خطا در ثبت‌نام. لطفاً دوباره تلاش کنید.');
+    } catch (err) {
+      setError(
+        getErrorMessage(err) || 'خطا در ثبت‌نام. لطفاً دوباره تلاش کنید.',
+      );
       setIsLoading(false);
     }
   };
