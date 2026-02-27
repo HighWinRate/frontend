@@ -4,8 +4,8 @@ import type { NextRequest } from 'next/server';
 
 const protectedRoutes = ['/dashboard', '/profile', '/tickets', '/transactions'];
 
-export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
+export async function proxy(request: NextRequest) {
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
@@ -21,12 +21,6 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value);
-          });
-          response = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set(name, value, options);
           });
         },
@@ -35,14 +29,14 @@ export async function middleware(request: NextRequest) {
   );
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const isProtected = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route),
   );
 
-  if (isProtected && !session) {
+  if (isProtected && !user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/login';
     redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname);
@@ -53,6 +47,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/profile/:path*', '/tickets/:path*', '/transactions/:path*'],
+  matcher: [
+    '/dashboard/:path*',
+    '/profile/:path*',
+    '/tickets/:path*',
+    '/transactions/:path*',
+  ],
 };
-

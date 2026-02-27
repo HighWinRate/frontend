@@ -1,9 +1,10 @@
 import { Suspense } from 'react';
 import NewTicketForm from './NewTicketForm';
+import Loading from '@/app/loading';
 
 export default function NewTicketPage() {
   return (
-    <Suspense fallback={<div className="max-w-3xl mx-auto px-4 py-12 text-center text-gray-500">در حال بارگذاری...</div>}>
+    <Suspense fallback={<Loading></Loading>}>
       <NewTicketForm />
     </Suspense>
   );

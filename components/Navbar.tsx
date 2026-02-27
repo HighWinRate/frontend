@@ -2,13 +2,24 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { Button } from './ui/Button';
 import { LANDING_URLS } from '@/lib/constants';
+import { supabase } from '@/lib/supabase/client';
+import { useAuth } from '@/providers/AuthProvider';
+import { useRouter } from 'next/navigation';
 
 export function Navbar() {
-  const { user, logout, isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const { isAuthenticated, user } = useAuth();
+  const router = useRouter();
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      router.push('/login');
+    } catch (e) {
+      alert(e.message);
+    }
+  };
 
   return (
     <nav className="fixed top-0 w-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm z-50 border-b border-gray-200 dark:border-gray-800 shadow-sm">
@@ -66,7 +77,8 @@ export function Navbar() {
                 </Link>
                 {user && (
                   <span className="text-gray-700 dark:text-gray-300 font-medium">
-                    {user.first_name} {user.last_name}
+                    {user?.user_metadata?.first_name}{' '}
+                    {user?.user_metadata?.last_name}
                   </span>
                 )}
                 <Button variant="outline" size="sm" onClick={logout}>
@@ -96,11 +108,26 @@ export function Navbar() {
               onClick={() => setIsOpen(!isOpen)}
               className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
             >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
                 {isOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
                 )}
               </svg>
             </button>
@@ -156,7 +183,8 @@ export function Navbar() {
                 </Link>
                 {user && (
                   <div className="py-2 text-gray-700 dark:text-gray-300">
-                    {user.first_name} {user.last_name}
+                    {user.user_metadata?.first_name}{' '}
+                    {user?.user_metadata?.last_name}
                   </div>
                 )}
                 <button

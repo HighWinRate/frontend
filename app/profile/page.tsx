@@ -1,17 +1,16 @@
 'use client';
 
-'use client';
-
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { useAuth } from '@/providers/AuthProvider';
+import Loading from '@/app/loading';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, isAuthenticated, loading, updateUser: updateAuthUser } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -19,25 +18,25 @@ export default function ProfilePage() {
     password: '',
     confirmPassword: '',
   });
+  const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!isAuthenticated && loading) {
       router.push('/login');
-      return;
+    } else if (user) {
+      setFormData({
+        first_name: user?.user_metadata?.first_name || '',
+        last_name: user?.user_metadata?.last_name || '',
+        email: user?.email || '',
+        password: '',
+        confirmPassword: '',
+      });
+      setLoading(false);
     }
-
-    if (user) {
-      setFormData((prev) => ({
-        ...prev,
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
-        email: user.email || '',
-      }));
-    }
-  }, [user, isAuthenticated, loading, router]);
+  }, [isAuthenticated, user, router, loading]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -133,7 +132,7 @@ export default function ProfilePage() {
       }
 
       setSuccessMessage('مشخصات با موفقیت به‌روزرسانی شد');
-      
+
       // Clear password fields
       setFormData((prev) => ({
         ...prev,
@@ -145,10 +144,10 @@ export default function ProfilePage() {
       setTimeout(() => {
         setSuccessMessage('');
       }, 3000);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating profile:', error);
       setErrors({
-        submit: error.message || 'خطا در به‌روزرسانی مشخصات',
+        submit: error?.message || 'خطا در به‌روزرسانی مشخصات',
       });
     } finally {
       setIsSubmitting(false);
@@ -156,11 +155,7 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-600 dark:text-gray-400">در حال بارگذاری...</div>
-      </div>
-    );
+    return <Loading></Loading>;
   }
 
   if (!user) {
@@ -264,7 +259,8 @@ export default function ProfilePage() {
                 تغییر رمز عبور (اختیاری)
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                اگر می‌خواهید رمز عبور را تغییر دهید، فیلدهای زیر را پر کنید. در غیر این صورت، خالی بگذارید.
+                اگر می‌خواهید رمز عبور را تغییر دهید، فیلدهای زیر را پر کنید. در
+                غیر این صورت، خالی بگذارید.
               </p>
 
               <div className="space-y-4">
@@ -333,4 +329,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

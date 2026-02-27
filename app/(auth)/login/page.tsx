@@ -1,37 +1,52 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase/client';
+import { useAuth } from '@/providers/AuthProvider';
 
 export default function LoginPage() {
   const router = useRouter();
-  const pathname = usePathname();
-  const { login, loading, user, refreshUser, updateUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    if (!loading && user) {
-      router.replace('/dashboard');
-    }
-  }, [loading, isLoading, user, router]);
+    if (isAuthenticated) router.replace('/dashboard');
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setIsLoading(true);
+    setError('');
 
     try {
-      await login(email, password);
-      await refreshUser();
-    } catch (err: any) {
-      setError(err?.message || 'خطا در ورود. لطفاً دوباره تلاش کنید.');
+      const { data, error: loginError } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+      console.log(data.user, data.session, loginError);
+
+      if (loginError) {
+        if (loginError?.code === 'email_not_confirmed') {
+          router.replace('/verify-email');
+          return;
+        }
+
+        // other auth errors
+        console.error(loginError?.message);
+      } else {
+        // everything ok
+        router.replace('/dashboard');
+      }
+    } catch (err) {
+      setError(err?.message || 'خطا در ورود. دوباره تلاش کنید.');
     } finally {
       setIsLoading(false);
     }

@@ -1,3 +1,5 @@
+'use server';
+
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getUserAccounts } from '@/lib/data/journal';
@@ -9,7 +11,12 @@ export default async function JournalPage() {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
+    error,
   } = await supabase.auth.getUser();
+
+  if (error) {
+    alert(error.message);
+  }
 
   if (!user) {
     redirect('/login?redirectedFrom=/journal');

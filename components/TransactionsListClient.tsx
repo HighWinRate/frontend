@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Loading from '@/app/loading';
 
 interface TransactionItem {
   id: string;
@@ -11,7 +12,11 @@ interface TransactionItem {
   status: string;
   created_at: string;
   product?: { id: string; title: string } | null;
-  subscription_plan?: { id: string; name: string; duration_days: number } | null;
+  subscription_plan?: {
+    id: string;
+    name: string;
+    duration_days: number;
+  } | null;
 }
 
 export default function TransactionsListClient() {
@@ -22,7 +27,9 @@ export default function TransactionsListClient() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch('/api/transactions', { credentials: 'include' });
+        const res = await fetch('/api/transactions', {
+          credentials: 'include',
+        });
         if (!res.ok) return;
         const data = await res.json();
         setTransactions(Array.isArray(data) ? data : []);
@@ -57,11 +64,7 @@ export default function TransactionsListClient() {
   };
 
   if (loading) {
-    return (
-      <div className="py-8 text-center text-muted-foreground">
-        در حال بارگذاری تراکنش‌ها...
-      </div>
-    );
+    return <Loading></Loading>;
   }
 
   return (
@@ -119,7 +122,7 @@ export default function TransactionsListClient() {
                   <td className="px-4 py-3 text-sm text-foreground">
                     {t.subscription_plan
                       ? `اشتراک ${t.subscription_plan.name}`
-                      : t.product?.title ?? '—'}
+                      : (t.product?.title ?? '—')}
                   </td>
                   <td className="px-4 py-3 text-sm text-foreground">
                     {formatAmount(t.amount)}
@@ -132,7 +135,8 @@ export default function TransactionsListClient() {
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${
-                        statusClass[t.status] ?? 'bg-muted text-muted-foreground border-border'
+                        statusClass[t.status] ??
+                        'bg-muted text-muted-foreground border-border'
                       }`}
                     >
                       {statusLabel[t.status] ?? t.status}
